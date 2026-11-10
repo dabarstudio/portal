@@ -37,9 +37,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--cor);outline-off
 .note{font-size:.85rem;color:var(--tx2)}
 /* app */
 header.top{background:#fff;border-bottom:1px solid var(--ln);position:sticky;top:0;z-index:5}
-header.top .wrap{display:flex;align-items:center;gap:14px;min-height:64px;flex-wrap:wrap}
+header.top .wrap{display:flex;align-items:center;gap:10px;min-height:64px}
 header.top img{height:44px;width:auto}
-header.top .nm{font-weight:700;line-height:1.2}
+header.top .nm{font-weight:700;line-height:1.2;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.top .nm small{overflow:hidden;text-overflow:ellipsis}
 header.top .nm small{display:block;font-weight:400;color:var(--tx2);font-size:.8rem}
 header.top .sp{flex:1}
 nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--ln);background:#fff}
@@ -78,6 +79,31 @@ dialog::backdrop{background:rgba(20,25,22,.45)}
 .dlgft{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 footer.by{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:.72rem;color:var(--tx2);padding:6px;background:rgba(246,247,244,.92);border-top:1px solid var(--ln)}
 .empty{padding:24px;text-align:center;color:var(--tx2)}
+.sinoW{position:relative}
+.sinoN{position:absolute;top:-6px;right:-6px;background:var(--err);color:#fff;border-radius:99px;font-size:.7rem;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px}
+.sinoP{position:absolute;right:0;top:44px;width:min(360px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--ln);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.12);z-index:20}
+.sinoP .nt{padding:10px 14px;border-bottom:1px solid var(--ln);cursor:pointer;font-size:.88rem}
+.sinoP .nt.nova{background:var(--cor-cl)}
+.sinoP .nt small{display:block;color:var(--tx2);font-size:.75rem}
+.kb{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.kcol{background:#eef0ec;border-radius:12px;padding:10px;min-height:200px}
+.kcol h3{font-size:.9rem;margin:2px 4px 10px;display:flex;justify-content:space-between}
+.kcol.over{outline:2px dashed var(--cor)}
+.kc{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:10px;margin-bottom:8px;cursor:grab;font-size:.9rem}
+.kc .mt{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:.75rem;color:var(--tx2)}
+.kc.atr{border-left:4px solid var(--err)}
+.cal td.c{text-align:center;padding:6px 4px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;cursor:pointer;border:0}
+.d-aberta{background:#2f6b45}.d-ok{background:#9fd3ae}.d-atr{background:#8e1f1f}.d-tarde{background:#e7a3a3}.d-sm{background:#c9c3d6}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;padding:4px}
+.bal{max-width:80%;padding:8px 12px;border-radius:12px;font-size:.92rem;white-space:pre-wrap;word-break:break-word}
+.bal.eu{align-self:flex-end;background:var(--cor);color:#fff}
+.bal.ele{align-self:flex-start;background:#eef0ec}
+.bal small{display:block;font-size:.7rem;opacity:.75;margin-top:2px}
+.lst{list-style:none;margin:0;padding:0}
+.lst li{padding:10px 0;border-bottom:1px solid var(--ln);cursor:pointer}
+.lst li.on{font-weight:700}
+.pix{font-family:ui-monospace,monospace;font-size:.75rem;word-break:break-all;background:#f6f7f4;border-radius:8px;padding:6px 8px}
 @media (max-width:640px){header.top img{height:36px} th.hm,td.hm{display:none} .card{padding:14px}}
 </style>
 </head>
@@ -115,8 +141,9 @@ footer.by{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:.72
   <header class="top"><div class="wrap">
     <img id="hLogo" class="hide" alt="">
     <div class="nm"><span id="hNome"></span><small id="hUser"></small></div>
-    <div class="sp"></div>
+    
     <select id="hEsc" class="hide" style="width:auto" aria-label="Escritório"></select>
+    <div class="sinoW"><button class="btn ghost sm" id="bSino" type="button" aria-label="Avisos" aria-expanded="false">🔔<span id="sinoN" class="sinoN hide">0</span></button><div id="sinoP" class="sinoP hide" role="dialog" aria-label="Avisos"></div></div>
     <button class="btn ghost sm" id="bSair" type="button">Sair</button>
   </div></header>
   <nav class="tabs" aria-label="Seções"><div class="wrap" id="tabs"></div></nav>
@@ -145,7 +172,8 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch { /* ok */ } }
 const S = { user: null, vital: false, membros: [], esc: null, papel: null, tab: null, comp: compAnterior(), clientes: [], abre: null };
 
 /* ---------- marca ---------- */
-function slugAtual() { const q = new URLSearchParams(location.search).get("e"); if (q) { lsSet("dabar-esc", q.toLowerCase()); return q.toLowerCase(); } return lsGet("dabar-esc") || ""; }
+const DABAR = { nome: "Dabar", logo_url: null, cor: "#24323F" };
+function slugAtual() { const q = new URLSearchParams(location.search).get("e"); return q ? q.toLowerCase() : ""; }
 function aplicarMarca(m) {
   if (!m) return;
   document.documentElement.style.setProperty("--cor", m.cor || "#4F5D33");
@@ -154,7 +182,7 @@ function aplicarMarca(m) {
   document.title = (m.nome || "Portal") + " · Portal";
   for (const [img, nm] of [[$("#lgLogo"), $("#lgNome")], [$("#hLogo"), $("#hNome")]]) {
     if (m.logo_url) { img.src = m.logo_url; img.alt = m.nome; img.classList.remove("hide"); } else img.classList.add("hide");
-    nm.textContent = m.logo_url && img.id === "lgLogo" ? "Portal do cliente" : m.nome;
+    nm.textContent = m === DABAR ? (img.id === "lgLogo" ? "Plataforma Dabar" : "Dabar · Plataforma") : (m.logo_url && img.id === "lgLogo" ? "Portal do cliente" : m.nome);
   }
 }
 function clarear(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; const f = (x) => Math.round(x + (255 - x) * 0.88); return `rgb(${f(r)},${f(g)},${f(b)})`; }
@@ -191,11 +219,12 @@ async function iniciar() {
   if (!S.membros.length && !S.vital) { await sb.auth.signOut(); mostrar("vLogin"); $("#lMsg").className = "msg err"; $("#lMsg").textContent = "Este acesso não está ligado a nenhum escritório."; return; }
   const slug = slugAtual();
   const m = S.membros.find((x) => x.wl_escritorios.slug === slug) || S.membros[0];
-  if (m) escolherEsc(m); else { S.esc = null; S.papel = null; }
+  if (m && !(S.vital && !slug && S.membros.length === 0)) escolherEsc(m); else { S.esc = null; S.papel = null; aplicarMarca(DABAR); history.replaceState(null, "", location.pathname); }
   const sel = $("#hEsc");
   if (S.membros.length > 1) { sel.innerHTML = S.membros.map((x) => `<option value="${x.escritorio}">${esc(x.wl_escritorios.nome)}</option>`).join(""); sel.value = S.esc && S.esc.id; sel.classList.remove("hide"); }
   $("#hUser").textContent = (m && m.nome) || S.user.email;
-  mostrar("vApp"); montarTabs();
+  $(".sinoW").classList.toggle("hide", !S.esc);
+  mostrar("vApp"); montarTabs(); if (S.esc) iniciarSino();
 }
 $("#hEsc").addEventListener("change", (e) => { const m = S.membros.find((x) => x.escritorio === e.target.value); escolherEsc(m); S.tab = null; montarTabs(); });
 function escolherEsc(m) { S.esc = m.wl_escritorios; S.papel = m.papel; lsSet("dabar-esc", S.esc.slug); aplicarMarca(S.esc); history.replaceState(null, "", "?e=" + S.esc.slug); }
@@ -203,8 +232,8 @@ function escolherEsc(m) { S.esc = m.wl_escritorios; S.papel = m.papel; lsSet("da
 /* ---------- abas ---------- */
 function abas() {
   const t = [];
-  if (S.papel === "cliente") t.push(["meus", "Meus documentos"]);
-  if (S.papel === "admin" || S.papel === "equipe") t.push(["docs", "Documentos"], ["clientes", "Clientes"], ["lista", "Lista do mês"], ["quadro", "Tarefas"]);
+  if (S.papel === "cliente") t.push(["inicio", "Início"], ["guias", "Guias"], ["meus", "Documentos"], ["msgs", "Mensagens"]);
+  if (S.papel === "admin" || S.papel === "equipe") t.push(["docs", "Documentos"], ["guias", "Guias"], ["obrig", "Obrigações"], ["quadro", "Tarefas"], ["msgs", "Mensagens"], ["clientes", "Clientes"], ["lista", "Lista do mês"]);
   if (S.papel === "admin") t.push(["acessos", "Acessos"], ["marca", "Escritório"]);
   if (S.vital) t.push(["vital", "Escritórios (Dabar)"]);
   return t;
@@ -215,7 +244,8 @@ function montarTabs() {
   render();
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; S.tab = b.dataset.t; S.abre = null; montarTabs(); });
-function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ meus: vMeus, docs: vDocs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
+function irPara(tab, extra) { S.tab = tab; S.abre = (extra && extra.cliente) || null; if (extra && extra.comp) S.comp = extra.comp; montarTabs(); }
+function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
 
 /* ---------- diálogo simples ---------- */
 function dialogo(titulo, campos, okTxt = "Salvar") {
@@ -380,7 +410,6 @@ async function vLista(c) {
 }
 
 /* ---------- tarefas (etapa 2) ---------- */
-async function vQuadro(c) { c.innerHTML = '<div class="card empty"><h2>Quadro de tarefas</h2><p>Em preparação. Em breve o quadro de tarefas do escritório aparece aqui.</p></div>'; }
 
 /* ---------- acessos ---------- */
 async function chamarAcessos(corpo) {
@@ -445,8 +474,424 @@ async function vVital(c) {
   };
 }
 
+/* ---------- utilidades fase 2 ---------- */
+const brl = (v) => v == null || v === "" ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const hojeISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const compBR = (c) => c ? c.split("-").reverse().join("/") : "—";
+async function carregarEquipe() { const { data } = await sb.from("wl_membros").select("user_id, nome, papel").eq("escritorio", S.esc.id).in("papel", ["admin", "equipe"]).order("nome"); S.equipe = data || []; return S.equipe; }
+const nomeEquipe = (u) => { const m = (S.equipe || []).find((x) => x.user_id === u); return m ? m.nome.split(" ")[0] : ""; };
+async function clientesDoUsuario() {
+  const { data: lig } = await sb.from("wl_cliente_usuarios").select("cliente, wl_clientes(id, nome, escritorio)").eq("user_id", S.user.id);
+  return (lig || []).map((l) => l.wl_clientes).filter((x) => x && x.escritorio === S.esc.id);
+}
+async function subirArquivo(esc, cli, pasta, f) {
+  if (f.size > 25 * 1024 * 1024) { aviso(`"${f.name}" passa de 25 MB.`, false); return null; }
+  const path = `${esc}/${cli}/${pasta}/${Date.now()}-${nomeSeguro(f.name)}`;
+  const { error } = await sb.storage.from("wl-docs").upload(path, f, { upsert: false, contentType: f.type || undefined });
+  if (error) { aviso(`Falha ao enviar "${f.name}".`, false); return null; }
+  return path;
+}
+async function copiar(txt) { try { await navigator.clipboard.writeText(txt); aviso("Copiado."); } catch { const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); aviso("Copiado."); } catch { aviso("Não foi possível copiar.", false); } t.remove(); } }
+
+/* ---------- avisos (sininho) ---------- */
+let canalSino = null;
+async function iniciarSino() {
+  const carregar = async () => {
+    const { data } = await sb.from("wl_notif").select("*").eq("user_id", S.user.id).eq("escritorio", S.esc.id).order("criado_em", { ascending: false }).limit(40);
+    S.notif = data || []; desenharSino();
+  };
+  await carregar();
+  if (canalSino) sb.removeChannel(canalSino);
+  canalSino = sb.channel("notif-" + S.user.id).on("postgres_changes", { event: "INSERT", schema: "public", table: "wl_notif", filter: "user_id=eq." + S.user.id }, (p) => {
+    if (p.new.escritorio !== S.esc.id) return;
+    S.notif.unshift(p.new); desenharSino();
+    try { if ("Notification" in window && Notification.permission === "granted" && document.hidden) new Notification(S.esc.nome, { body: p.new.texto, icon: S.esc.logo_url || undefined }); } catch { /* ok */ }
+    if (["docs", "guias", "msgs", "quadro", "obrig", "inicio", "meus"].includes(S.tab) && !$("#dlg").open) render();
+  }).subscribe();
+}
+function desenharSino() {
+  const n = (S.notif || []).filter((x) => !x.lida).length, b = $("#sinoN");
+  b.textContent = n > 99 ? "99+" : n; b.classList.toggle("hide", !n);
+  document.title = (n ? `(${n}) ` : "") + (S.esc ? S.esc.nome : "Dabar") + " · Portal";
+  const p = $("#sinoP");
+  const perm = "Notification" in window && Notification.permission === "default" ? `<div class="nt" data-perm="1">🔔 <b>Ativar avisos neste aparelho</b><small>Receba um alerta quando chegar algo novo.</small></div>` : "";
+  p.innerHTML = `<div class="row sb" style="padding:10px 14px;border-bottom:1px solid var(--ln)"><b>Avisos</b>${n ? '<button class="btn ghost sm" data-todas="1" type="button">Marcar todos como lidos</button>' : ""}</div>${perm}` +
+    ((S.notif || []).map((x) => `<div class="nt ${x.lida ? "" : "nova"}" data-nt="${x.id}">${esc(x.texto)}<small>${new Date(x.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</small></div>`).join("") || '<div class="empty">Nenhum aviso.</div>');
+}
+$("#bSino").addEventListener("click", (e) => { e.stopPropagation(); const p = $("#sinoP"); p.classList.toggle("hide"); $("#bSino").setAttribute("aria-expanded", !p.classList.contains("hide")); });
+document.addEventListener("click", (e) => { if (!e.target.closest(".sinoW")) $("#sinoP").classList.add("hide"); });
+$("#sinoP").addEventListener("click", async (e) => {
+  if (e.target.closest("[data-perm]")) { try { await Notification.requestPermission(); } catch { /* ok */ } return desenharSino(); }
+  if (e.target.closest("[data-todas]")) { await sb.from("wl_notif").update({ lida: true }).eq("user_id", S.user.id).eq("escritorio", S.esc.id).eq("lida", false); S.notif.forEach((x) => (x.lida = true)); return desenharSino(); }
+  const it = e.target.closest("[data-nt]"); if (!it) return;
+  const x = S.notif.find((y) => String(y.id) === it.dataset.nt); if (!x) return;
+  if (!x.lida) { x.lida = true; sb.from("wl_notif").update({ lida: true }).eq("id", x.id); desenharSino(); }
+  $("#sinoP").classList.add("hide");
+  const l = x.link || {}; if (l.tab && abas().some((t) => t[0] === l.tab)) { if (l.tarefa) S.abreTarefa = l.tarefa; irPara(l.tab, l); }
+});
+
+/* ---------- início do cliente ---------- */
+async function vInicio(c) {
+  const cls = await clientesDoUsuario();
+  if (!cls.length) { c.innerHTML = '<div class="card empty">Nenhuma empresa ligada ao seu acesso. Fale com o escritório.</div>'; return; }
+  const ids = cls.map((x) => x.id);
+  const [{ data: gs }, { data: comps }, { data: msgs }, { data: coms }] = await Promise.all([
+    sb.from("wl_guias").select("id, tipo, competencia, vencimento, valor, paga_em").in("cliente", ids).is("paga_em", null).order("vencimento"),
+    sb.from("wl_doc_comp").select("id, competencia, prazo, cliente").in("cliente", ids).order("competencia", { ascending: false }).limit(ids.length),
+    sb.from("wl_mensagens").select("id").in("cliente", ids).eq("do_escritorio", true).is("lida_em", null),
+    sb.from("wl_comunicados").select("*").eq("escritorio", S.esc.id).order("criado_em", { ascending: false }).limit(5),
+  ]);
+  let falta = 0; const cids = (comps || []).map((x) => x.id);
+  if (cids.length) { const { data: its } = await sb.from("wl_doc_item").select("status").in("comp", cids); falta = (its || []).filter((i) => i.status === "pendente" || i.status === "recusado").length; }
+  const hj = hojeISO(), venc = (gs || []).filter((g) => g.vencimento < hj).length;
+  c.innerHTML = `<h2 style="margin-bottom:12px">Olá, ${esc(((S.membros.find((m) => m.escritorio === S.esc.id) || {}).nome || "").split(" ")[0])}!</h2>
+    <div class="kpis">
+      <button class="kpi" data-ir="guias" style="text-align:left;cursor:pointer"><b>${(gs || []).length}</b><span>guia(s) para pagar${venc ? ` · <span style="color:var(--err)">${venc} vencida(s)</span>` : ""}</span></button>
+      <button class="kpi" data-ir="meus" style="text-align:left;cursor:pointer"><b>${falta}</b><span>documento(s) faltando</span></button>
+      <button class="kpi" data-ir="msgs" style="text-align:left;cursor:pointer"><b>${(msgs || []).length}</b><span>mensagem(ns) nova(s)</span></button>
+    </div>
+    ${(gs || []).length ? `<div class="card"><h3>Próximos pagamentos</h3><table style="margin-top:6px"><tbody>${gs.slice(0, 4).map((g) => `<tr><td><b>${esc(g.tipo)}</b> <span class="note">${compBR(g.competencia)}</span></td><td>${dataBR(g.vencimento)}</td><td style="text-align:right">${brl(g.valor)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    <div class="card"><h3>Comunicados do escritório</h3>${(coms || []).map((x) => `<div style="padding:10px 0;border-bottom:1px solid var(--ln)"><b>${esc(x.titulo)}</b><div class="note">${new Date(x.criado_em).toLocaleDateString("pt-BR")}</div><div style="white-space:pre-wrap;margin-top:4px">${esc(x.texto)}</div></div>`).join("") || '<p class="note">Nenhum comunicado.</p>'}</div>`;
+  c.onclick = (e) => { const b = e.target.closest("[data-ir]"); if (b) irPara(b.dataset.ir); };
+}
+
+/* ---------- guias ---------- */
+function situacaoGuia(g) {
+  if (g.cancelada) return '<span class="chip st-pendente">Cancelada</span>';
+  if (g.paga_em) return `<span class="chip st-aprovado">Paga ${new Date(g.paga_em).toLocaleDateString("pt-BR")}</span>`;
+  const r = g.recalculo_em ? ' <span class="chip st-nao_se_aplica">Recálculo pedido</span>' : "";
+  if (g.vencimento < hojeISO()) return '<span class="chip st-recusado">Vencida</span>' + r;
+  return (g.lida_em ? `<span class="chip st-enviado">Vista ${new Date(g.lida_em).toLocaleDateString("pt-BR")}</span>` : '<span class="chip st-pendente">Não vista</span>') + r;
+}
+async function vGuias(c) {
+  if (S.papel === "cliente") return vGuiasCliente(c);
+  const [cls] = await Promise.all([carregarClientes(), carregarEquipe()]);
+  const f = S.fGuia || (S.fGuia = { cli: "", sit: "abertas" });
+  let q = sb.from("wl_guias").select("*").eq("escritorio", S.esc.id).order("vencimento", { ascending: false }).limit(300);
+  if (f.cli) q = q.eq("cliente", f.cli);
+  const { data: gs0 } = await q; const hj = hojeISO();
+  const gs = (gs0 || []).filter((g) => f.sit === "todas" || (f.sit === "abertas" && !g.paga_em && !g.cancelada) || (f.sit === "pagas" && g.paga_em) || (f.sit === "vencidas" && !g.paga_em && !g.cancelada && g.vencimento < hj) || (f.sit === "recalculo" && g.recalculo_em && !g.paga_em));
+  const nomeCli = (id) => (cls.find((x) => x.id === id) || {}).nome || "—";
+  c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><div><h2>Guias</h2><p class="note" style="margin:0">Envie os PDFs das guias: o robô lê o cliente, a competência, o vencimento e o valor. Você confere e envia.</p></div>
+    <label class="btn up" style="margin:0">📄 Enviar guias (PDF)<input type="file" id="gUp" accept="application/pdf,.pdf" multiple></label></div>
+    <div id="gConf"></div>
+    <div class="row" style="margin-bottom:10px"><select id="gCli" style="width:auto"><option value="">Todos os clientes</option>${cls.map((x) => `<option value="${x.id}" ${x.id === f.cli ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>
+    <select id="gSit" style="width:auto">${[["abertas", "A pagar"], ["vencidas", "Vencidas"], ["recalculo", "Recálculo pedido"], ["pagas", "Pagas"], ["todas", "Todas"]].map(([v, n]) => `<option value="${v}" ${v === f.sit ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+    <div class="card tw">${gs.length ? `<table><thead><tr><th>Cliente</th><th>Guia</th><th class="hm">Competência</th><th>Vencimento</th><th class="hm">Valor</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${gs.map((g) => `<tr><td><b>${esc(nomeCli(g.cliente))}</b></td><td>${esc(g.tipo)}${g.recalculo_obs ? `<div class="note">“${esc(g.recalculo_obs)}”</div>` : ""}</td><td class="hm">${compBR(g.competencia)}</td><td>${dataBR(g.vencimento)}</td><td class="hm">${brl(g.valor)}</td><td>${situacaoGuia(g)}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" data-abre="${esc(g.path)}" type="button">PDF</button>${g.comprovante_path ? ` <button class="btn sec sm" data-abre="${esc(g.comprovante_path)}" type="button">Comprovante</button>` : ""}${!g.paga_em && !g.cancelada ? ` <button class="btn ghost sm" data-cancela="${g.id}" type="button">Cancelar</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhuma guia neste filtro.</div>'}</div>`;
+  $("#gCli").onchange = (e) => { f.cli = e.target.value; render(); };
+  $("#gSit").onchange = (e) => { f.sit = e.target.value; render(); };
+  $("#gUp").onchange = (e) => { if (e.target.files.length) conferirGuias([...e.target.files], cls); e.target.value = ""; };
+  c.onclick = async (e) => {
+    const a = e.target.closest("[data-abre]"); if (a) return abrirArquivo(a.dataset.abre);
+    const k = e.target.closest("[data-cancela]"); if (k) { if (!(await confirmar("Cancelar esta guia? Ela some da tela do cliente."))) return; await sb.from("wl_guias").update({ cancelada: true }).eq("id", +k.dataset.cancela); render(); }
+  };
+}
+
+/* robô de leitura */
+let pdfjsPronto = null;
+function carregarPdfJs() {
+  if (pdfjsPronto) return pdfjsPronto;
+  pdfjsPronto = new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; res(window.pdfjsLib); }; s.onerror = rej; document.head.appendChild(s); });
+  return pdfjsPronto;
+}
+async function textoPdf(f) {
+  const lib = await carregarPdfJs(); const doc = await lib.getDocument({ data: await f.arrayBuffer() }).promise; let t = "";
+  for (let p = 1; p <= Math.min(doc.numPages, 3); p++) { const pg = await doc.getPage(p); const tc = await pg.getTextContent(); t += tc.items.map((i) => i.str).join(" ") + "\n"; }
+  return t.replace(/[ \t]+/g, " ");
+}
+const soDig = (s) => String(s || "").replace(/\D/g, "");
+const MESES = { janeiro: 1, fevereiro: 2, "março": 3, marco: 3, abril: 4, maio: 5, junho: 6, julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12 };
+function lerGuia(t, cls) {
+  const r = { tipo: "Guia", cliente: "", competencia: "", vencimento: "", valor: "", pix: "", linha: "" };
+  if (/Simples Nacional|\bDAS\b|PGDAS/i.test(t)) r.tipo = /MEI|SIMEI/i.test(t) ? "DAS-MEI" : "DAS";
+  else if (/FGTS/i.test(t)) r.tipo = "FGTS";
+  else if (/DCTFWeb|eSocial|Documento de Arrecada..o de Receitas Federais|\bDARF\b/i.test(t)) r.tipo = /DCTFWeb|Previdenci/i.test(t) ? "DARF Previdenciário" : "DARF";
+  else if (/\bGPS\b|Guia da Previd/i.test(t)) r.tipo = "GPS";
+  else if (/ICMS|\bDARE\b|\bDAE\b|GNRE/i.test(t)) r.tipo = "ICMS / DAE";
+  else if (/ISS|ISSQN/i.test(t)) r.tipo = "ISS";
+  const docs = (t.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2}/g) || []).map(soDig);
+  const cl = cls.find((c) => c.documento && docs.includes(soDig(c.documento))) || cls.find((c) => c.documento && docs.some((d) => d.slice(0, 8) === soDig(c.documento).slice(0, 8) && soDig(c.documento).length === 14));
+  if (cl) r.cliente = cl.id;
+  const dt = (s) => { const m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
+  const mv = t.match(/(?:Pagar (?:este documento )?at[ée]|Data de Vencimento|Vencimento|Pag[áa]vel at[ée])\s*:?\s*(\d{2}\/\d{2}\/\d{4})/i);
+  if (mv) r.vencimento = dt(mv[1]); else { const all = (t.match(/\d{2}\/\d{2}\/\d{4}/g) || []).map(dt).sort(); r.vencimento = all[all.length - 1] || ""; }
+  const mc = t.match(/(?:Per[ií]odo de Apura[çc][ãa]o|Compet[êe]ncia|Refer[êe]ncia|PA)\s*:?\s*(\d{2})\/(\d{4})/i) || t.match(/(?:Per[ií]odo de Apura[çc][ãa]o|Compet[êe]ncia)\s*:?\s*\d{2}\/(\d{2})\/(\d{4})/i);
+  if (mc) r.competencia = `${mc[2]}-${mc[1]}`;
+  else { const mn = t.match(/(janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*\/?\s*(?:de\s*)?(\d{4})/i); if (mn) r.competencia = `${mn[2]}-${String(MESES[mn[1].toLowerCase()]).padStart(2, "0")}`; }
+  const mvl = t.match(/(?:Valor Total do Documento|Valor Total|Total a (?:pagar|recolher)|Valor a pagar|Valor do documento|\(=\)\s*Valor Cobrado)\s*:?\s*(?:R\$\s*)?([\d.]+,\d{2})/i);
+  const num = (s) => Number(s.replace(/\./g, "").replace(",", "."));
+  if (mvl) r.valor = num(mvl[1]); else { const vs = (t.match(/\d{1,3}(?:\.\d{3})*,\d{2}/g) || []).map(num); if (vs.length) r.valor = Math.max(...vs); }
+  const pix = t.replace(/\s+/g, "").match(/000201\S*?6304[0-9A-F]{4}/);
+  if (pix) r.pix = pix[0];
+  const ld = t.match(/\b\d{11}-?\d\s+\d{11}-?\d\s+\d{11}-?\d\s+\d{11}-?\d\b/) || t.match(/\b\d{5}\.\d{5}\s+\d{5}\.\d{6}\s+\d{5}\.\d{6}\s+\d\s+\d{14}\b/);
+  if (ld) r.linha = ld[0];
+  return r;
+}
+async function conferirGuias(files, cls) {
+  const box = $("#gConf"); box.innerHTML = '<div class="card">Lendo as guias…</div>';
+  const linhas = [];
+  for (const f of files) { let r; try { r = lerGuia(await textoPdf(f), cls); } catch { r = { tipo: "Guia", cliente: "", competencia: "", vencimento: "", valor: "", pix: "", linha: "" }; } linhas.push({ f, ...r }); }
+  const ops = (v) => `<option value="">— escolha —</option>` + cls.filter((x) => x.ativo).map((x) => `<option value="${x.id}" ${x.id === v ? "selected" : ""}>${esc(x.nome)}</option>`).join("");
+  box.innerHTML = `<div class="card"><div class="row sb"><h3>Conferência (${linhas.length})</h3><span class="note">Confira os campos lidos pelo robô antes de enviar.</span></div><div class="tw"><table><thead><tr><th>Arquivo</th><th>Cliente</th><th>Guia</th><th>Competência</th><th>Vencimento</th><th>Valor</th><th></th></tr></thead><tbody>
+    ${linhas.map((l, i) => `<tr data-l="${i}"><td class="note" style="max-width:160px;word-break:break-all">${esc(l.f.name)}${l.pix ? " · Pix ✓" : ""}</td><td><select data-k="cliente" style="min-width:160px">${ops(l.cliente)}</select></td><td><input data-k="tipo" value="${esc(l.tipo)}" style="min-width:110px"></td>
+    <td><input data-k="competencia" type="month" value="${l.competencia}"></td><td><input data-k="vencimento" type="date" value="${l.vencimento}"></td><td><input data-k="valor" type="number" step="0.01" value="${l.valor}" style="width:120px"></td><td><button class="btn ghost sm" data-tira="${i}" type="button">Tirar</button></td></tr>`).join("")}</tbody></table></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" id="gConfX" type="button">Cancelar</button><button class="btn" id="gConfOk" type="button">Enviar aos clientes</button></div></div>`;
+  box.oninput = (e) => { const tr = e.target.closest("[data-l]"); if (tr && e.target.dataset.k) linhas[+tr.dataset.l][e.target.dataset.k] = e.target.value; };
+  box.onchange = box.oninput;
+  box.onclick = async (e) => {
+    const t = e.target.closest("[data-tira]"); if (t) { linhas[+t.dataset.tira].fora = true; t.closest("tr").remove(); return; }
+    if (e.target.id === "gConfX") { box.innerHTML = ""; return; }
+    if (e.target.id !== "gConfOk") return;
+    const ok = linhas.filter((l) => !l.fora);
+    const ruim = ok.find((l) => !l.cliente || !l.vencimento || !l.tipo); if (ruim) return aviso(`Preencha cliente, guia e vencimento de "${ruim.f.name}".`, false);
+    e.target.disabled = true; let n = 0;
+    for (const l of ok) {
+      const path = await subirArquivo(S.esc.id, l.cliente, "guias", l.f); if (!path) continue;
+      const { data: g, error } = await sb.from("wl_guias").insert({ escritorio: S.esc.id, cliente: l.cliente, tipo: l.tipo.trim(), competencia: l.competencia || null, vencimento: l.vencimento, valor: l.valor === "" ? null : +l.valor, pix: l.pix || null, linha: l.linha || null, path, nome_arq: l.f.name }).select("id").single();
+      if (error) { await sb.storage.from("wl-docs").remove([path]); aviso(`Falha ao registrar "${l.f.name}".`, false); continue; }
+      n++;
+      if (l.competencia) { // baixa automática na obrigação correspondente
+        const { data: ents } = await sb.from("wl_obrig_entrega").select("id, wl_obrigacoes(nome)").eq("cliente", l.cliente).eq("competencia", l.competencia).eq("status", "aberta");
+        const tn = l.tipo.toLowerCase().split(/[\s/-]+/)[0];
+        const en = (ents || []).find((x) => x.wl_obrigacoes && x.wl_obrigacoes.nome.toLowerCase().includes(tn));
+        if (en) { await sb.from("wl_obrig_entrega").update({ status: "entregue", entregue_em: new Date().toISOString(), guia: g.id }).eq("id", en.id); await sb.from("wl_guias").update({ entrega: en.id }).eq("id", g.id); }
+      }
+    }
+    aviso(`${n} guia(s) enviada(s).`); box.innerHTML = ""; render();
+  };
+}
+
+async function vGuiasCliente(c) {
+  const cls = await clientesDoUsuario(); const ids = cls.map((x) => x.id);
+  if (!ids.length) { c.innerHTML = '<div class="card empty">Nenhuma empresa ligada ao seu acesso.</div>'; return; }
+  const { data: gs } = await sb.from("wl_guias").select("*").in("cliente", ids).order("vencimento", { ascending: false }).limit(100);
+  const hj = hojeISO(), abertas = (gs || []).filter((g) => !g.paga_em).sort((a, b) => a.vencimento.localeCompare(b.vencimento)), pagas = (gs || []).filter((g) => g.paga_em);
+  const card = (g) => `<div class="item"><div class="hd"><div><h3>${esc(g.tipo)} ${g.competencia ? `<span class="note">· ${compBR(g.competencia)}</span>` : ""}</h3>${cls.length > 1 ? `<div class="note">${esc((cls.find((x) => x.id === g.cliente) || {}).nome)}</div>` : ""}
+    <div style="margin-top:4px">Vence <b>${dataBR(g.vencimento)}</b> · <b>${brl(g.valor)}</b></div></div>${situacaoGuia(g)}</div>
+    ${g.pix && !g.paga_em ? `<div class="pix" style="margin-top:8px">${esc(g.pix.slice(0, 60))}…</div>` : ""}
+    <div class="row" style="margin-top:10px"><button class="btn sec sm" data-ver="${g.id}" type="button">Abrir guia</button>
+    ${!g.paga_em ? `${g.pix ? `<button class="btn sm" data-pix="${g.id}" type="button">Copiar Pix</button>` : ""}${g.linha ? `<button class="btn ghost sm" data-lin="${g.id}" type="button">Copiar código de barras</button>` : ""}
+    <label class="btn ghost sm up" style="margin:0">✅ Já paguei<input type="file" accept="image/*,application/pdf" data-pago="${g.id}"></label>
+    ${g.vencimento < hj && !g.recalculo_em ? `<button class="btn red sm" data-rec="${g.id}" type="button">Pedir recálculo</button>` : ""}` : (g.comprovante_path ? `<button class="btn ghost sm" data-comp="${g.id}" type="button">Ver comprovante</button>` : "")}</div></div>`;
+  c.innerHTML = `<div class="card"><h2>Guias para pagar</h2><p class="note" style="margin:0">Toque em <b>Já paguei</b> e envie o comprovante (foto ou PDF). Se uma guia venceu, peça o recálculo.</p></div>
+    ${abertas.map(card).join("") || '<div class="card empty">Nenhuma guia em aberto. 👍</div>'}
+    ${pagas.length ? `<h3 style="margin:18px 0 8px">Pagas</h3>${pagas.slice(0, 12).map(card).join("")}` : ""}`;
+  const g = (id) => gs.find((x) => String(x.id) === String(id));
+  c.onclick = async (e) => {
+    const v = e.target.closest("[data-ver]"); if (v) { const x = g(v.dataset.ver); sb.rpc("wl_guia_lida", { p_id: x.id }); return abrirArquivo(x.path); }
+    const p = e.target.closest("[data-pix]"); if (p) { const x = g(p.dataset.pix); sb.rpc("wl_guia_lida", { p_id: x.id }); return copiar(x.pix); }
+    const l = e.target.closest("[data-lin]"); if (l) return copiar(soDig(g(l.dataset.lin).linha));
+    const cp = e.target.closest("[data-comp]"); if (cp) return abrirArquivo(g(cp.dataset.comp).comprovante_path);
+    const r = e.target.closest("[data-rec]"); if (r) { const d = await dialogo("Pedir recálculo", [{ k: "obs", rot: "Para qual data você vai pagar? (opcional)", tipo: "area" }], "Pedir"); if (!d) return;
+      const { error } = await sb.rpc("wl_guia_recalculo", { p_id: +r.dataset.rec, p_obs: d.obs || null }); aviso(error ? "Não foi possível pedir." : "Pedido enviado ao escritório.", !error); render(); }
+  };
+  c.onchange = async (e) => {
+    const inp = e.target.closest("[data-pago]"); if (!inp || !inp.files.length) return; const x = g(inp.dataset.pago);
+    aviso("Enviando comprovante…"); const path = await subirArquivo(x.escritorio, x.cliente, "comprovantes", inp.files[0]); if (!path) return;
+    const { error } = await sb.rpc("wl_guia_paga", { p_id: x.id, p_comprovante: path }); aviso(error ? "Não foi possível registrar." : "Pagamento registrado. Obrigado!", !error); render();
+  };
+}
+
+/* ---------- obrigações ---------- */
+async function vObrig(c) {
+  S.obrigVis = S.obrigVis || "cal";
+  await Promise.all([carregarClientes(), carregarEquipe()]);
+  const topo = `<div class="row sb" style="margin-bottom:14px"><div><h2>Obrigações</h2><p class="note" style="margin:0">Calendário de entregas por cliente, com meta interna antes do vencimento.</p></div>
+    <div class="row"><button class="btn ${S.obrigVis === "cal" ? "" : "ghost"} sm" data-vis="cal" type="button">Calendário</button><button class="btn ${S.obrigVis === "cad" ? "" : "ghost"} sm" data-vis="cad" type="button">Cadastro</button></div></div>`;
+  c.onclick = null;
+  if (S.obrigVis === "cad") return vObrigCad(c, topo);
+  const { data: ob } = await sb.from("wl_obrigacoes").select("*").eq("escritorio", S.esc.id).order("nome");
+  const { data: en } = await sb.from("wl_obrig_entrega").select("*").eq("escritorio", S.esc.id).eq("competencia", S.comp).order("vencimento");
+  const oids = (ob || []).map((o) => o.id);
+  const { data: vsr } = oids.length ? await sb.from("wl_obrig_vinculo").select("*").in("obrigacao", oids) : { data: [] };
+  (en || []).forEach((x) => { const v = (vsr || []).find((y) => y.obrigacao === x.obrigacao && y.cliente === x.cliente); x.responsavel_v = v && v.responsavel; });
+  const hj = hojeISO();
+  const cor = (x) => x.status === "sem_movimento" ? "d-sm" : x.status === "entregue" ? (x.entregue_em && x.entregue_em.slice(0, 10) > x.vencimento ? "d-tarde" : "d-ok") : (x.vencimento < hj ? "d-atr" : "d-aberta");
+  const leg = { "d-aberta": "Em aberto", "d-ok": "Entregue no prazo", "d-atr": "Atrasada", "d-tarde": "Entregue com atraso", "d-sm": "Sem movimento" };
+  const cnt = (k) => (en || []).filter((x) => cor(x) === k).length;
+  const nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "—";
+  const grupos = (ob || []).map((o) => ({ o, es: (en || []).filter((x) => x.obrigacao === o.id) })).filter((g) => g.es.length);
+  c.innerHTML = topo + `<div class="row" style="margin-bottom:12px"><label for="oComp" style="margin:0">Competência</label><input id="oComp" type="month" value="${S.comp}" style="width:auto"><button class="btn ghost sm" id="oGerar" type="button">Gerar entregas do mês</button></div>
+    <div class="kpis">${Object.keys(leg).map((k) => `<div class="kpi"><b>${cnt(k)}</b><span><i class="dot ${k}"></i> ${leg[k]}</span></div>`).join("")}</div>
+    ${grupos.length ? grupos.map(({ o, es }) => `<div class="card tw"><div class="row sb"><h3>${esc(o.nome)}</h3><span class="note">vence dia ${o.dia} · meta ${o.meta_dias} dia(s) útil(eis) antes</span></div>
+      <table class="cal" style="margin-top:6px"><thead><tr><th><input type="checkbox" data-todos="${o.id}" aria-label="Selecionar todos"></th><th>Cliente</th><th class="c">Situação</th><th class="hm">Meta</th><th>Vencimento</th><th class="hm">Responsável</th><th></th></tr></thead><tbody>
+      ${es.map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${esc(nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
+        <td class="c"><span class="dot ${cor(x)}" title="${leg[cor(x)]}"></span></td><td class="hm">${dataBR(x.meta)}</td><td>${dataBR(x.vencimento)}</td><td class="hm">${esc(nomeEquipe(x.responsavel_v) || "")}</td>
+        <td style="text-align:right;white-space:nowrap">${x.status === "aberta" ? `<button class="btn sm" data-ent="${x.id}" type="button">Entregue</button> <button class="btn ghost sm" data-sm="${x.id}" type="button">Sem movimento</button> <button class="btn ghost sm" data-tar="${x.id}" type="button">Tarefa</button>` : `<button class="btn ghost sm" data-reab="${x.id}" type="button">Reabrir</button>`}</td></tr>`).join("")}</tbody></table>
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn ghost sm" data-smlote="${o.id}" type="button">Baixa sem movimento nos marcados</button></div></div>`).join("")
+    : `<div class="card empty">Nenhuma entrega para ${compBR(S.comp)}. Cadastre as obrigações e os clientes de cada uma na aba <b>Cadastro</b>, depois toque em <b>Gerar entregas do mês</b>.</div>`}`;
+  $("#oComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
+  c.onclick = async (e) => {
+    const vis = e.target.closest("[data-vis]"); if (vis) { S.obrigVis = vis.dataset.vis; return render(); }
+    if (e.target.id === "oGerar") { const { data, error } = await sb.rpc("wl_gerar_obrig", { p_esc: S.esc.id, p_comp: S.comp }); aviso(error ? "Não foi possível gerar." : `${data || 0} entrega(s) criada(s).`, !error); return render(); }
+    const td = e.target.closest("[data-todos]"); if (td) { c.querySelectorAll(`[data-ob="${td.dataset.todos}"]:not(:disabled)`).forEach((x) => (x.checked = td.checked)); return; }
+    const ent = e.target.closest("[data-ent]"); if (ent) { await sb.from("wl_obrig_entrega").update({ status: "entregue", entregue_em: new Date().toISOString() }).eq("id", +ent.dataset.ent); return render(); }
+    const reab = e.target.closest("[data-reab]"); if (reab) { await sb.from("wl_obrig_entrega").update({ status: "aberta", entregue_em: null, justificativa: null }).eq("id", +reab.dataset.reab); return render(); }
+    const sm = e.target.closest("[data-sm]"); const lote = e.target.closest("[data-smlote]");
+    if (sm || lote) {
+      const ids = sm ? [+sm.dataset.sm] : [...c.querySelectorAll(`[data-ob="${lote.dataset.smlote}"]:checked`)].map((x) => +x.dataset.sel);
+      if (!ids.length) return aviso("Marque os clientes primeiro.", false);
+      const d = await dialogo("Baixa sem movimento", [{ k: "j", rot: "Justificativa", v: "Sem movimento no período", req: true }], "Dar baixa"); if (!d) return;
+      await sb.from("wl_obrig_entrega").update({ status: "sem_movimento", justificativa: d.j, entregue_em: new Date().toISOString() }).in("id", ids); return render();
+    }
+    const tar = e.target.closest("[data-tar]"); if (tar) { const x = en.find((y) => String(y.id) === tar.dataset.tar); const o = ob.find((y) => y.id === x.obrigacao);
+      const { data: vv } = await sb.from("wl_obrig_vinculo").select("responsavel").eq("obrigacao", o.id).eq("cliente", x.cliente).maybeSingle();
+      const { error } = await sb.from("wl_tarefas").insert({ escritorio: S.esc.id, cliente: x.cliente, titulo: `${o.nome} · ${nomeCli(x.cliente)} (${compBR(x.competencia)})`, prazo: x.meta, entrega: x.id, responsavel: (vv && vv.responsavel) || null });
+      aviso(error ? "Não foi possível criar a tarefa." : "Tarefa criada no quadro.", !error); }
+  };
+}
+async function vObrigCad(c, topo) {
+  const { data: ob } = await sb.from("wl_obrigacoes").select("*").eq("escritorio", S.esc.id).order("nome");
+  const ids = (ob || []).map((o) => o.id);
+  const { data: vs } = ids.length ? await sb.from("wl_obrig_vinculo").select("*").in("obrigacao", ids) : { data: [] };
+  const MS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  c.innerHTML = topo + `<div class="row sb" style="margin-bottom:10px"><p class="note" style="margin:0">Cadastre cada obrigação uma vez e marque os clientes que têm essa obrigação. As entregas são geradas todo dia, sozinhas.</p><button class="btn" id="oNova" type="button">+ Obrigação</button></div>
+    <div class="card tw">${(ob || []).length ? `<table><thead><tr><th>Obrigação</th><th>Vencimento</th><th class="hm">Meses</th><th class="hm">Meta</th><th>Clientes</th><th></th></tr></thead><tbody>
+    ${ob.map((o) => `<tr><td><b>${esc(o.nome)}</b>${o.departamento ? `<div class="note">${esc(o.departamento)}</div>` : ""}${o.ativo ? "" : ' <span class="chip st-pendente">Inativa</span>'}</td><td>dia ${o.dia} ${o.mes_offset === 0 ? "do mesmo mês" : o.mes_offset === 1 ? "do mês seguinte" : `+${o.mes_offset} meses`}<div class="note">${o.nao_util === "antecipa" ? "antecipa" : "posterga"} se não for dia útil</div></td>
+      <td class="hm note">${o.meses.length === 12 ? "todos" : o.meses.map((m) => MS[m - 1]).join(", ")}</td><td class="hm">${o.meta_dias} dia(s) útil(eis)</td><td>${(vs || []).filter((v) => v.obrigacao === o.id).length}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-vinc="${o.id}" type="button">Clientes</button> <button class="btn ghost sm" data-ed="${o.id}" type="button">Editar</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhuma obrigação cadastrada.</div>'}</div>`;
+  const form = async (o = {}) => {
+    const r = await dialogo(o.id ? "Editar obrigação" : "Nova obrigação", [
+      { k: "nome", rot: "Nome (ex.: DAS, DCTFWeb, FGTS, EFD-Reinf)", v: o.nome, req: true }, { k: "departamento", rot: "Departamento (opcional)", v: o.departamento },
+      { k: "dia", rot: "Dia do vencimento", tipo: "number", v: String(o.dia || 20), req: true },
+      { k: "mes_offset", rot: "Vence em relação à competência", tipo: "select", v: String(o.mes_offset ?? 1), ops: [["0", "No mesmo mês"], ["1", "No mês seguinte"], ["2", "2 meses depois"], ["3", "3 meses depois"]] },
+      { k: "nao_util", rot: "Se cair em fim de semana", tipo: "select", v: o.nao_util || "antecipa", ops: [["antecipa", "Antecipa para o dia útil anterior"], ["posterga", "Posterga para o próximo dia útil"]] },
+      { k: "meta_dias", rot: "Meta interna: avisar quantos dias úteis antes", tipo: "number", v: String(o.meta_dias ?? 3) },
+      { k: "meses", rot: "Meses da competência (ex.: 1-12, ou 3,6,9,12)", v: o.meses ? (o.meses.length === 12 ? "1-12" : o.meses.join(",")) : "1-12" },
+      ...(o.id ? [{ k: "ativo", rot: "Situação", tipo: "select", v: o.ativo ? "1" : "0", ops: [["1", "Ativa"], ["0", "Inativa"]] }] : []),
+    ]); if (!r) return;
+    const meses = r.meses === "1-12" || !r.meses ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : r.meses.split(",").map((x) => +x.trim()).filter((x) => x >= 1 && x <= 12);
+    const up = { nome: r.nome, departamento: r.departamento || null, dia: Math.min(31, Math.max(1, +r.dia || 1)), mes_offset: +r.mes_offset, nao_util: r.nao_util, meta_dias: Math.min(30, Math.max(0, +r.meta_dias || 0)), meses };
+    if (o.id) up.ativo = r.ativo === "1";
+    const { error } = o.id ? await sb.from("wl_obrigacoes").update(up).eq("id", o.id) : await sb.from("wl_obrigacoes").insert({ ...up, escritorio: S.esc.id });
+    aviso(error ? "Não foi possível salvar." : "Obrigação salva.", !error); render();
+  };
+  c.onclick = async (e) => {
+    const vis = e.target.closest("[data-vis]"); if (vis) { S.obrigVis = vis.dataset.vis; return render(); }
+    if (e.target.id === "oNova") return form();
+    const ed = e.target.closest("[data-ed]"); if (ed) return form(ob.find((o) => String(o.id) === ed.dataset.ed));
+    const vi = e.target.closest("[data-vinc]"); if (vi) return vinculos(ob.find((o) => String(o.id) === vi.dataset.vinc), (vs || []).filter((v) => String(v.obrigacao) === vi.dataset.vinc));
+  };
+}
+function vinculos(o, atuais) {
+  const d = $("#dlg"), f = $("#dlgF"), eq = S.equipe || [];
+  f.innerHTML = `<h2>${esc(o.nome)} · clientes</h2><p class="note">Marque os clientes que têm esta obrigação e quem é o responsável.</p><div style="max-height:55vh;overflow:auto">
+    ${S.clientes.filter((x) => x.ativo).map((x) => { const v = atuais.find((y) => y.cliente === x.id); return `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--ln)"><label style="margin:0;flex:1;display:flex;gap:8px;align-items:center;color:var(--tx);font-weight:500"><input type="checkbox" data-c="${x.id}" ${v ? "checked" : ""} style="width:auto"> ${esc(x.nome)}</label>
+      <select data-r="${x.id}" style="width:auto"><option value="">Responsável…</option>${eq.map((m) => `<option value="${m.user_id}" ${v && v.responsavel === m.user_id ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>`; }).join("") || '<p class="note">Cadastre clientes primeiro.</p>'}</div>
+    <div class="dlgft"><button class="btn ghost" value="x">Cancelar</button><button class="btn" value="ok">Salvar</button></div>`;
+  const fim = async () => { d.removeEventListener("close", fim); if (d.returnValue !== "ok") return;
+    const marc = [...f.querySelectorAll("[data-c]:checked")].map((x) => ({ obrigacao: o.id, cliente: x.dataset.c, responsavel: f.querySelector(`[data-r="${x.dataset.c}"]`).value || null }));
+    const tirar = atuais.filter((a) => !marc.some((m) => m.cliente === a.cliente)).map((a) => a.cliente);
+    if (tirar.length) await sb.from("wl_obrig_vinculo").delete().eq("obrigacao", o.id).in("cliente", tirar);
+    if (marc.length) { const { error } = await sb.from("wl_obrig_vinculo").upsert(marc, { onConflict: "obrigacao,cliente" }); if (error) aviso("Não foi possível salvar.", false); }
+    aviso("Clientes salvos."); render(); };
+  d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
+}
+
+/* ---------- tarefas (quadro) ---------- */
+const COLS = [["a_fazer", "A fazer"], ["fazendo", "Fazendo"], ["aguardando", "Aguardando"], ["feito", "Feito"]];
+let canalTar = null;
+async function vQuadro(c) {
+  await Promise.all([carregarClientes(), carregarEquipe()]);
+  const f = S.fTar || (S.fTar = { resp: "", cli: "" });
+  const { data: ts0 } = await sb.from("wl_tarefas").select("*").eq("escritorio", S.esc.id).eq("arquivada", false).order("ordem").order("id");
+  const ts = (ts0 || []).filter((t) => (!f.resp || (f.resp === "eu" ? t.responsavel === S.user.id : t.responsavel === f.resp)) && (!f.cli || t.cliente === f.cli));
+  const hj = hojeISO(), nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "";
+  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><h2>Tarefas</h2><div class="row">
+    <select id="tResp" style="width:auto"><option value="">Todos</option><option value="eu" ${f.resp === "eu" ? "selected" : ""}>Minhas</option>${S.equipe.map((m) => `<option value="${m.user_id}" ${f.resp === m.user_id ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select>
+    <select id="tCli" style="width:auto"><option value="">Todos os clientes</option>${S.clientes.map((x) => `<option value="${x.id}" ${f.cli === x.id ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>
+    <button class="btn" id="tNova" type="button">+ Tarefa</button></div></div>
+    <div class="kb">${COLS.map(([k, n]) => { const l = ts.filter((t) => t.coluna === k); return `<div class="kcol" data-col="${k}"><h3>${n}<span class="note">${l.length}</span></h3>
+      ${l.map((t) => { const ck = t.checklist || [], ok = ck.filter((i) => i.ok).length; return `<div class="kc ${t.prazo && t.prazo < hj && k !== "feito" ? "atr" : ""}" draggable="true" data-t="${t.id}"><b>${esc(t.titulo)}</b>
+        <div class="mt">${t.cliente ? `<span>🏢 ${esc(nomeCli(t.cliente))}</span>` : ""}${t.responsavel ? `<span>👤 ${esc(nomeEquipe(t.responsavel))}</span>` : ""}${t.prazo ? `<span>📅 ${dataBR(t.prazo)}</span>` : ""}${ck.length ? `<span>☑ ${ok}/${ck.length}</span>` : ""}</div></div>`; }).join("")}</div>`; }).join("")}</div>`;
+  $("#tResp").onchange = (e) => { f.resp = e.target.value; render(); };
+  $("#tCli").onchange = (e) => { f.cli = e.target.value; render(); };
+  let arr = null;
+  c.ondragstart = (e) => { const k = e.target.closest("[data-t]"); if (k) { arr = +k.dataset.t; e.dataTransfer.effectAllowed = "move"; } };
+  c.ondragover = (e) => { const col = e.target.closest("[data-col]"); if (col && arr) { e.preventDefault(); c.querySelectorAll(".kcol").forEach((x) => x.classList.toggle("over", x === col)); } };
+  c.ondrop = async (e) => { const col = e.target.closest("[data-col]"); c.querySelectorAll(".kcol").forEach((x) => x.classList.remove("over")); if (!col || !arr) return; e.preventDefault();
+    const id = arr; arr = null; await sb.from("wl_tarefas").update({ coluna: col.dataset.col, ordem: Date.now() / 1000 }).eq("id", id); render(); };
+  c.onclick = async (e) => { if (e.target.id === "tNova") return editarTarefa({ coluna: "a_fazer", checklist: [] }); const k = e.target.closest("[data-t]"); if (k) editarTarefa(ts0.find((t) => String(t.id) === k.dataset.t)); };
+  if (canalTar) sb.removeChannel(canalTar);
+  canalTar = sb.channel("tar-" + S.esc.id).on("postgres_changes", { event: "*", schema: "public", table: "wl_tarefas", filter: "escritorio=eq." + S.esc.id }, () => { if (S.tab === "quadro" && !$("#dlg").open) render(); }).subscribe();
+  if (S.abreTarefa) { const t = ts0.find((x) => x.id === S.abreTarefa); S.abreTarefa = null; if (t) editarTarefa(t); }
+}
+async function editarTarefa(t) {
+  const d = $("#dlg"), f = $("#dlgF"); let ck = JSON.parse(JSON.stringify(t.checklist || []));
+  const { data: cms } = t.id ? await sb.from("wl_tarefa_coment").select("*").eq("tarefa", t.id).order("criado_em") : { data: [] };
+  const desenhaCk = () => { $("#tkCk").innerHTML = ck.map((i, n) => `<div class="row" style="gap:6px;padding:3px 0"><input type="checkbox" data-ck="${n}" ${i.ok ? "checked" : ""} style="width:auto"><span style="flex:1;${i.ok ? "text-decoration:line-through;color:var(--tx2)" : ""}">${esc(i.t)}</span><button class="btn ghost sm" data-ckx="${n}" type="button" aria-label="Remover item">✕</button></div>`).join(""); };
+  f.innerHTML = `<h2>${t.id ? "Tarefa" : "Nova tarefa"}</h2>
+    <label for="tkT">Título</label><input id="tkT" value="${esc(t.titulo || "")}" required>
+    <label for="tkD">Descrição</label><textarea id="tkD" rows="3">${esc(t.descricao || "")}</textarea>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px">
+      <div><label for="tkC">Cliente</label><select id="tkC"><option value="">—</option>${S.clientes.map((x) => `<option value="${x.id}" ${x.id === t.cliente ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select></div>
+      <div><label for="tkR">Responsável</label><select id="tkR"><option value="">—</option>${S.equipe.map((m) => `<option value="${m.user_id}" ${m.user_id === t.responsavel ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>
+      <div><label for="tkP">Prazo</label><input id="tkP" type="date" value="${t.prazo || ""}"></div>
+      <div><label for="tkS">Coluna</label><select id="tkS">${COLS.map(([k, n]) => `<option value="${k}" ${k === t.coluna ? "selected" : ""}>${n}</option>`).join("")}</select></div></div>
+    <label>Checklist</label><div id="tkCk"></div><div class="row" style="gap:6px;margin-top:4px"><input id="tkCkN" placeholder="Novo item" style="flex:1"><button class="btn ghost sm" id="tkCkA" type="button">Adicionar</button></div>
+    ${t.id ? `<label>Comentários</label><div style="max-height:180px;overflow:auto">${(cms || []).map((x) => `<div style="padding:6px 0;border-bottom:1px solid var(--ln);font-size:.9rem"><b>${esc(nomeEquipe(x.autor) || "—")}</b> <span class="note">${new Date(x.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span><div style="white-space:pre-wrap">${esc(x.texto)}</div></div>`).join("") || '<p class="note">Nenhum comentário.</p>'}</div>
+    <div class="row" style="gap:6px;margin-top:6px"><input id="tkCm" placeholder="Escreva um comentário" style="flex:1"><button class="btn ghost sm" id="tkCmA" type="button">Enviar</button></div>` : ""}
+    <div class="dlgft">${t.id ? '<button class="btn red" value="arq" formnovalidate>Arquivar</button>' : ""}<span style="flex:1"></span><button class="btn ghost" value="x" formnovalidate>Fechar</button><button class="btn" value="ok">Salvar</button></div>`;
+  desenhaCk();
+  f.onclick = async (e) => {
+    if (e.target.id === "tkCkA") { const v = $("#tkCkN").value.trim(); if (v) { ck.push({ t: v, ok: false }); $("#tkCkN").value = ""; desenhaCk(); } }
+    const x = e.target.closest("[data-ckx]"); if (x) { ck.splice(+x.dataset.ckx, 1); desenhaCk(); }
+    if (e.target.id === "tkCmA") { const v = $("#tkCm").value.trim(); if (!v) return; const { error } = await sb.from("wl_tarefa_coment").insert({ tarefa: t.id, texto: v }); if (error) return aviso("Não foi possível comentar.", false); d.close("x"); editarTarefa(t); }
+  };
+  f.onchange = (e) => { const k = e.target.closest("[data-ck]"); if (k) { ck[+k.dataset.ck].ok = k.checked; desenhaCk(); } };
+  const fim = async () => { d.removeEventListener("close", fim); f.onclick = f.onchange = null; const rv = d.returnValue;
+    if (rv === "arq") { await sb.from("wl_tarefas").update({ arquivada: true }).eq("id", t.id); return render(); }
+    if (rv !== "ok") return;
+    const up = { titulo: $("#tkT").value.trim(), descricao: $("#tkD").value.trim() || null, cliente: $("#tkC").value || null, responsavel: $("#tkR").value || null, prazo: $("#tkP").value || null, coluna: $("#tkS").value, checklist: ck };
+    if (!up.titulo) return aviso("Informe o título.", false);
+    const { error } = t.id ? await sb.from("wl_tarefas").update(up).eq("id", t.id) : await sb.from("wl_tarefas").insert({ ...up, escritorio: S.esc.id, ordem: Date.now() / 1000 });
+    if (error) aviso("Não foi possível salvar.", false); render(); };
+  d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
+}
+
+/* ---------- mensagens e comunicados ---------- */
+let canalMsg = null;
+async function vMsgs(c) {
+  const eq = S.papel !== "cliente";
+  const cls = eq ? (await carregarClientes()).filter((x) => x.ativo) : await clientesDoUsuario();
+  if (!cls.length) { c.innerHTML = '<div class="card empty">Nenhum cliente.</div>'; return; }
+  const cli = cls.find((x) => x.id === S.abre) || (eq ? null : cls[0]);
+  let naoLidas = [];
+  if (eq) { const { data } = await sb.from("wl_mensagens").select("cliente").eq("escritorio", S.esc.id).eq("do_escritorio", false).is("lida_em", null); naoLidas = data || []; }
+  const lista = eq ? `<div class="card" style="padding:10px 14px"><div class="row sb"><h3>Clientes</h3><button class="btn ghost sm" id="mCom" type="button">📣 Comunicado</button></div><ul class="lst">${cls.map((x) => { const n = naoLidas.filter((m) => m.cliente === x.id).length; return `<li data-cli="${x.id}" class="${cli && cli.id === x.id ? "on" : ""}">${esc(x.nome)} ${n ? `<span class="chip st-enviado">${n}</span>` : ""}</li>`; }).join("")}</ul></div>` : "";
+  let chat = '<div class="card empty">Escolha um cliente para ver a conversa.</div>';
+  let msgs = [];
+  if (cli) {
+    const { data } = await sb.from("wl_mensagens").select("*").eq("cliente", cli.id).order("criado_em").limit(300); msgs = data || [];
+    sb.rpc("wl_msgs_lidas", { p_cli: cli.id });
+    chat = `<div class="card"><h3>${eq ? esc(cli.nome) : "Conversa com " + esc(S.esc.nome)}</h3><div class="chat" id="mChat" style="margin-top:10px">${msgs.map((m) => { const eu = m.do_escritorio === eq;
+      return `<div class="bal ${eu ? "eu" : "ele"}">${esc(m.texto)}${m.path ? `<div><a data-abre="${esc(m.path)}" style="color:inherit;text-decoration:underline;cursor:pointer">📎 ${esc(m.nome_arq || "arquivo")}</a></div>` : ""}<small>${esc(m.autor_nome || "")} · ${new Date(m.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}${eu && m.lida_em ? " · lida" : ""}</small></div>`; }).join("") || '<p class="note">Nenhuma mensagem ainda.</p>'}</div>
+      <form id="mForm" class="row" style="margin-top:10px;gap:6px;flex-wrap:nowrap"><label class="btn ghost sm up" style="margin:0" title="Anexar arquivo">📎<input type="file" id="mArq"></label><input id="mTxt" placeholder="Escreva sua mensagem" style="flex:1" autocomplete="off"><button class="btn" type="submit">Enviar</button></form><div class="note" id="mArqN"></div></div>`;
+  }
+  c.innerHTML = eq ? `<div style="display:grid;gap:14px;grid-template-columns:minmax(220px,300px) 1fr" class="msgGrid">${lista}<div>${chat}</div></div><style>@media(max-width:760px){.msgGrid{grid-template-columns:1fr!important}}</style>` : chat;
+  const ch = $("#mChat"); if (ch) ch.scrollTop = ch.scrollHeight;
+  let arq = null;
+  if ($("#mArq")) $("#mArq").onchange = (e) => { arq = e.target.files[0] || null; $("#mArqN").textContent = arq ? "Anexo: " + arq.name : ""; };
+  if ($("#mForm")) $("#mForm").onsubmit = async (e) => { e.preventDefault(); const txt = $("#mTxt").value.trim(); if (!txt && !arq) return;
+    let path = null; if (arq) { path = await subirArquivo(S.esc.id, cli.id, "mensagens", arq); if (!path) return; }
+    const me = S.membros.find((m) => m.escritorio === S.esc.id);
+    const { error } = await sb.from("wl_mensagens").insert({ escritorio: S.esc.id, cliente: cli.id, autor_nome: (me && me.nome) || "", do_escritorio: eq, texto: txt || (arq ? "Arquivo enviado" : ""), path, nome_arq: arq ? arq.name : null });
+    if (error) return aviso("Não foi possível enviar.", false); render(); };
+  c.onclick = async (e) => {
+    const li = e.target.closest("[data-cli]"); if (li) { S.abre = li.dataset.cli; return render(); }
+    const a = e.target.closest("[data-abre]"); if (a) return abrirArquivo(a.dataset.abre);
+    if (e.target.id === "mCom") { const r = await dialogo("Novo comunicado", [{ k: "cliente", rot: "Para", tipo: "select", v: "", ops: [["", "Todos os clientes"], ...cls.map((x) => [x.id, x.nome])] }, { k: "titulo", rot: "Título", req: true }, { k: "texto", rot: "Mensagem", tipo: "area" }], "Publicar"); if (!r || !r.titulo) return;
+      const { error } = await sb.from("wl_comunicados").insert({ escritorio: S.esc.id, cliente: r.cliente || null, titulo: r.titulo, texto: r.texto || "" }); aviso(error ? "Não foi possível publicar." : "Comunicado publicado.", !error); }
+  };
+  if (canalMsg) sb.removeChannel(canalMsg);
+  if (cli) canalMsg = sb.channel("msg-" + cli.id).on("postgres_changes", { event: "INSERT", schema: "public", table: "wl_mensagens", filter: "cliente=eq." + cli.id }, () => { if (S.tab === "msgs" && !$("#dlg").open && document.activeElement !== $("#mTxt")) render(); }).subscribe();
+}
+
 /* ---------- início ---------- */
-(async () => { const slug = slugAtual(); if (slug) { const { data } = await sb.rpc("wl_marca", { p_slug: slug }); if (data && data[0]) aplicarMarca(data[0]); } iniciar(); })();
+(async () => { const slug = slugAtual(); let mk = null; if (slug) { const { data } = await sb.rpc("wl_marca", { p_slug: slug }); mk = data && data[0]; } aplicarMarca(mk || DABAR); iniciar(); })();
 sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT") mostrar("vLogin"); });
 </script>
 </body>
