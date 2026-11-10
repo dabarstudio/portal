@@ -1,0 +1,1201 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#00582F">
+<meta name="robots" content="noindex">
+<title>Tarefas · Portal</title>
+<link rel="icon" href="/logo.png">
+<link rel="manifest" id="lnkMan" href="manifest.webmanifest">
+<meta name="theme-color" content="#00582F">
+<link rel="apple-touch-icon" id="lnkApple" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" id="mtApp" content="Tarefas">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: mesma barra da Área do cliente; coluna principal com semáforo + última versão, depois a atualização e os apontamentos; histórico no fim */
+:root{
+  color-scheme:light;
+  --bg:#F3F6F1; --surface:#FFFFFF; --surface-2:#E8EFE4; --line:#D3DECD;
+  --fg:#18241B; --muted:#57665A; --brand:#00582F; --brand-2:#007941; --leaf:#79C25B; --on-brand:#FFFFFF;
+  --warn:#9A6200; --warn-bg:#FFF3D6; --bad:#B3261E; --bad-bg:#FBE4E1; --ok:#1F7A3F; --ok-bg:#E1F2E5; --info:#2F6FA6; --info-bg:#E3EDF6;
+  --lamp-off:#C9D3C6; --red:#D93A2B; --green:#2FA352;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif; --body:"Source Sans 3","Segoe UI",system-ui,sans-serif; --mono:ui-monospace,Consolas,monospace; --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1712; --surface:#17221A; --surface-2:#1F2D23; --line:#2E4034; --fg:#E6EEE7; --muted:#9DB0A2;
+  --brand:#5FBF7F; --brand-2:#79C25B; --on-brand:#0B1A10; --warn:#F2C062; --warn-bg:#3A2E12; --bad:#F2A097; --bad-bg:#3D1C19; --ok:#7FD39A; --ok-bg:#163522; --info:#8DB9E3; --info-bg:#1B2A38;
+  --lamp-off:#2E4034; --red:#F0604F; --green:#4CC66F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1712; --surface:#17221A; --surface-2:#1F2D23; --line:#2E4034; --fg:#E6EEE7; --muted:#9DB0A2;
+  --brand:#5FBF7F; --brand-2:#79C25B; --on-brand:#0B1A10; --warn:#F2C062; --warn-bg:#3A2E12; --bad:#F2A097; --bad-bg:#3D1C19; --ok:#7FD39A; --ok-bg:#163522; --info:#8DB9E3; --info-bg:#1B2A38;
+  --lamp-off:#2E4034; --red:#F0604F; --green:#4CC66F; color-scheme:dark}
+html{padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+img{max-width:100%}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.wrap{max-width:none;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.logo{width:44px;height:44px;border-radius:10px;background:#fff;display:grid;place-items:center;flex:none;border:1px solid var(--line);text-decoration:none}
+.logo img{width:36px}
+.brandtxt{min-width:0}
+.clilogo{height:44px;width:auto;border-radius:8px;border:1px solid var(--line);background:#fff;padding:2px;flex:none}
+.anx{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.anx .a{position:relative;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);overflow:hidden;min-height:84px;display:flex;flex-direction:column}
+.anx .a a{color:inherit;text-decoration:none;display:flex;flex-direction:column;flex:1}
+.anx .a img{width:100%;height:76px;object-fit:cover;display:block;background:#fff}
+.anx .a .ic{height:76px;display:grid;place-items:center;font-size:1.8rem}
+.anx .a small{display:block;padding:4px 6px;font-size:.72rem;line-height:1.2;word-break:break-all;color:var(--muted)}
+.anx .a .x{position:absolute;top:3px;right:3px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:7px;font-size:.72rem;padding:1px 6px;cursor:pointer}
+.anxbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.anxdrop{outline:2px dashed var(--brand);outline-offset:4px;border-radius:10px}
+.brandtxt b{font-family:var(--display);display:block;color:var(--brand)}
+.brandtxt span{font-size:.8rem;color:var(--muted)}
+.spacer{flex:1}
+.top a.tab{border:0;background:none;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:600;white-space:nowrap;text-decoration:none}
+.top a.tab:hover{background:var(--surface-2);color:var(--brand)}
+main{padding-block:20px 48px;display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.stack{display:grid;gap:14px;align-content:start}
+.muted,.note{color:var(--muted)} .note{font-size:.88rem;margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.btn{border:1px solid var(--line);background:var(--surface);padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center;color:var(--fg)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.ghost{border-color:transparent;background:none;color:var(--brand)}
+.btn.sm{padding:6px 10px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.field{display:grid;gap:6px;min-width:0}
+.field label{font-weight:600;font-size:.92rem}
+.field input,.field select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:640px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.callout{background:var(--surface-2);border-radius:var(--r);padding:14px 16px;font-size:.93rem}
+.err{color:var(--bad);font-weight:600}
+.sino{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;font-size:1.05rem;cursor:pointer;color:inherit}
+.sino .bdg{position:absolute;top:-6px;right:-6px;background:#d9342b;color:#fff;border-radius:999px;font-size:.7rem;font-weight:700;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px}
+.painelN{position:fixed;top:64px;right:12px;width:min(420px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.22);z-index:30;padding:8px}
+.painelN .hd{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.painelN .it{display:block;width:100%;text-align:left;border:0;background:none;color:inherit;font:inherit;padding:9px 8px;border-radius:10px;cursor:pointer}
+.painelN .it:hover{background:var(--surface-2)}
+.painelN a.it{text-decoration:none}
+.painelN .it.nova{background:rgba(31,107,58,.08)}
+.painelN .it b{font-weight:700}
+.painelN .it small{display:block;color:var(--muted);font-size:.76rem;margin-top:2px}
+.painelN .it q{display:block;color:var(--muted);font-size:.85rem;quotes:none;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.placar{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin:0 0 14px;padding:0}
+.placar>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;font-family:var(--display);font-weight:700;color:var(--brand)}
+.placar>summary::-webkit-details-marker{display:none}
+.placar>summary .ab{margin-left:auto;font-family:inherit;font-weight:400;font-size:.82rem;color:var(--muted)}
+.placar[open]>summary .ab::after{content:" ▲"} .placar:not([open])>summary .ab::after{content:" ▼"}
+.plc{padding:0 14px 14px;display:grid;gap:12px}
+.plt{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.termo{flex:1;min-width:240px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.termo b{font-size:1.05rem}
+.termo .barra{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+.termo .barra i{display:block;height:100%;background:var(--ok);border-radius:99px}
+.pls{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.pp{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.pp .hd{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.pp .hd b{font-size:.98rem}
+.pp .hd .av{margin-left:0}
+.pp .nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;font-size:.78rem;color:var(--muted)}
+.pp .nums strong{font-size:1.25rem;color:var(--fg);display:block;line-height:1.1}
+.pp .bdgs{display:flex;gap:6px;flex-wrap:wrap}
+.pp .bdgs span{font-size:.76rem;background:var(--ok-bg);color:var(--ok);border-radius:99px;padding:2px 8px;font-weight:600}
+.pp .bdgs span.al,.pp .bdgs .al{background:var(--warn-bg);color:var(--warn)}
+.pp .pn{border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:8px}
+.pp .pn:hover strong,.pp .pn:focus-visible strong{text-decoration:underline}
+.pp .bdgs .pn{font-size:.76rem;border-radius:99px;padding:2px 8px;font-weight:600}
+.pp .mini{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.pp .mini i{display:block;height:100%;background:var(--brand-2)}
+.ticker{display:flex;align-items:stretch;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:.86rem;overflow:hidden}
+.ticker .lb{flex:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-weight:700;color:var(--brand);border-right:1px solid var(--line);background:var(--surface)}
+.ticker .vp{flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.ticker .tr{display:inline-flex;gap:28px;white-space:nowrap;padding:6px 0;animation:tick var(--dur,120s) linear infinite;will-change:transform}
+.ticker:hover .tr,.ticker:focus-within .tr{animation-play-state:paused}
+.ticker a{color:inherit;text-decoration:none}
+.ticker a:hover,.ticker a:focus-visible{text-decoration:underline}
+.ticker .ct b{font-weight:700}
+.ticker .up{color:var(--ok);font-weight:700}.ticker .dn{color:var(--bad);font-weight:700}
+.ticker .fn{color:var(--muted)}
+.ticker .mais{flex:none;border:0;border-left:1px solid var(--line);background:var(--surface);color:var(--brand);font:inherit;font-weight:700;padding:0 12px;cursor:pointer}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker .tr{animation:none}.ticker .vp{overflow-x:auto}}
+@media (max-width:640px){.ticker .lb span{display:none}}
+html,body{max-width:100%;overflow-x:hidden}
+#app>*{min-width:0;max-width:100%}
+.bar,.board,.placar{min-width:0;max-width:100%}
+.ctl{display:contents}
+.kpi .sh{display:none}
+#selQ{max-width:min(380px,40vw);min-width:0;text-overflow:ellipsis}
+.top .brandtxt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32vw}
+.top .brandtxt span{white-space:nowrap}
+@media (max-width:640px){
+  .kpi .lg{display:none}.kpi .sh{display:inline}
+  .top .brandtxt{display:none}
+  .top .tab{margin-left:auto}
+  .ctl{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;width:100%;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .ctl::-webkit-scrollbar{display:none}
+  .ctl>*{flex:0 0 auto}
+  .ctl .chips{display:flex;flex-wrap:nowrap;gap:6px}
+  .ctl .fsel{flex:0 0 auto!important;max-width:200px}
+  .board{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:86%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+  .board .col{scroll-snap-align:start;max-height:none}
+  html dialog{width:100vw!important;max-width:100vw!important;height:100dvh;max-height:100dvh!important;margin:0!important;border-radius:0!important;border:0!important;inset:0}
+  .bar .spacer{display:none}
+  #kSt{font-size:.7rem!important;max-width:24%!important}
+  .dlg{max-height:100dvh;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+  .placar>summary{padding:10px 12px}
+  .plc{padding:0 10px 10px}
+  .pls{grid-template-columns:minmax(0,1fr)}
+  .top .wrap{flex-wrap:wrap;gap:8px;padding-block:8px}
+  .top .logo{width:36px;height:36px}.top .logo img{width:28px}
+  .clilogo{height:36px}
+  .top .spacer{display:none}
+  #selQ{order:9;flex:1 1 100%;width:100%;max-width:none}
+  .top .tab{font-size:.82rem;padding:6px 8px}
+  .sino{padding:6px 8px}
+  .bar{gap:8px}
+  .bar .kpis{width:100%;display:flex;gap:6px;flex-wrap:nowrap}
+  .bar .kpi{flex:1;padding:6px 8px;font-size:.8rem}
+  #busca{flex:1 1 100%;width:100%}
+}
+.convite{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.convite span{flex:1 1 100%;font-weight:600}
+.rodape{position:fixed;left:0;right:0;bottom:0;z-index:25;text-align:center;padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px));font-size:.78rem;color:var(--muted);background:var(--surface);border-top:1px solid var(--line)}
+body{padding-bottom:calc(44px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
+.convite{bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
+.rodape a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.rodape a:hover{color:var(--brand)}
+.rodape img{width:20px;height:20px;border-radius:6px;background:#fff;border:1px solid var(--line)}
+.rodape b{color:var(--brand);font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--surface-2);white-space:nowrap}
+td.num,th.num{text-align:right;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:.85em;white-space:nowrap}
+
+/* ===== semáforo ===== */
+.topo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.topo{grid-template-columns:minmax(0,1fr)}}
+.sem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.poste{background:#1E2A22;border-radius:18px;padding:10px;display:grid;gap:10px;width:62px}
+.lamp{width:42px;height:42px;border-radius:50%;background:var(--lamp-off);opacity:.35;transition:opacity .2s,box-shadow .2s}
+.lamp.r.on{background:var(--red);opacity:1;box-shadow:0 0 18px var(--red)}
+.lamp.g.on{background:var(--green);opacity:1;box-shadow:0 0 18px var(--green)}
+.sem h2{font-size:1.25rem}
+.sem .q{color:var(--muted);font-size:.95rem}
+.ver b{font-family:var(--display)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:.93rem}
+.kv span:nth-child(odd){color:var(--muted)}
+
+/* ===== etapas da atualização ===== */
+
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bar input[type=search]{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 12px;min-width:200px;flex:1;max-width:340px}
+.kpis{display:flex;gap:8px;flex-wrap:wrap}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:.85rem;color:var(--muted)}
+.kpi b{font:700 1.05rem var(--display);color:var(--fg);margin-right:4px}
+.kpi.bad b{color:var(--bad)}
+button.kpi{font:inherit;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+button.kpi:hover{border-color:var(--brand-2)}
+button.kpi[aria-pressed="true"]{border-color:var(--brand);background:var(--ok-bg);box-shadow:inset 0 0 0 1px var(--brand)}
+.board{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:900px){.board{grid-template-columns:minmax(0,1fr)}}
+.col{background:var(--surface-2);border-radius:var(--r);padding:10px;display:grid;gap:8px;align-content:start;min-height:120px}
+.col.drop{outline:2px dashed var(--brand-2);outline-offset:-2px}
+.fsel{border:1px solid var(--line);border-radius:999px;padding:7px 10px;background:var(--surface);color:inherit;font:inherit;font-size:.86rem;max-width:230px}
+.col.ref{background:rgba(201,167,74,.13);border:1px dashed rgba(201,167,74,.6)}
+.col.ref .colh h2::after{content:" · fixas";font-weight:400;font-size:.78rem;color:var(--muted)}
+.col.ref .k{border-left:3px solid #c9a74a}
+.colh{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.colh h2{font-size:.95rem;flex:1}
+.colh .n{font-size:.8rem;color:var(--muted);font-weight:700;background:var(--surface);border-radius:999px;padding:1px 8px}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;display:grid;gap:6px;text-align:left;width:100%}
+.k:hover{border-color:var(--brand-2)}
+.k.drag{opacity:.4}
+.k .t{font-weight:600;line-height:1.3}
+.k .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.78rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-weight:700;font-size:.74rem;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.pill.atr{background:var(--bad-bg);color:var(--bad)} .pill.prox{background:var(--warn-bg);color:var(--warn)} .pill.okp{background:var(--ok-bg);color:var(--ok)}
+.pill.alta{background:var(--bad-bg);color:var(--bad)} .pill.media{background:var(--warn-bg);color:var(--warn)} .pill.baixa{background:var(--info-bg);color:var(--info)}
+.av{width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:inline-grid;place-items:center;font:700 .66rem var(--display);margin-left:auto}
+.add{border:1px dashed var(--line);background:none;border-radius:10px;padding:8px;color:var(--muted);font-weight:600;cursor:pointer;text-align:left}
+.add:hover{color:var(--brand);border-color:var(--brand-2)}
+.addf{display:grid;gap:6px}
+.addf textarea{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface);resize:vertical;min-height:52px}
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;background:var(--surface);color:var(--fg);width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+dialog::backdrop{background:rgba(10,20,14,.45)}
+#dlgA{width:min(460px,calc(100vw - 24px))!important;height:auto!important}
+.dlg{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;padding:20px;overflow:auto;max-height:calc(100dvh - 26px)}
+@media (max-width:720px){.dlg{grid-template-columns:minmax(0,1fr)}}
+.dlg .full{grid-column:1/-1}
+.dlg input[type=text],.dlg textarea,.dlg select,.dlg input[type=date]{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;width:100%;min-width:0}
+.dlg textarea{min-height:90px;resize:vertical}
+.ttl{font:700 1.15rem var(--display);border:1px solid transparent!important;padding:6px 8px!important}
+.ttl:hover,.ttl:focus{border-color:var(--line)!important}
+.ck{display:grid;gap:4px}
+.ck label{display:flex;gap:8px;align-items:flex-start;font-size:.93rem}
+.ck label.feito span{text-decoration:line-through;color:var(--muted)}
+.ck .x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer}
+.prog{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}.prog i{display:block;height:100%;background:var(--ok)}
+.coms{display:grid;gap:8px;max-height:260px;overflow:auto}
+.com{background:var(--surface-2);border-radius:10px;padding:8px 10px;font-size:.92rem}
+.com small{color:var(--muted);display:block;font-size:.76rem}
+.com .men{color:var(--primary,#1f6b3a);font-weight:700;background:rgba(31,107,58,.1);border-radius:6px;padding:0 3px}
+.menw{position:relative}
+.menl{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--surface,#fff);border:1px solid var(--line,#d9e2d9);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;margin-top:2px;max-height:220px;overflow:auto}
+.menl button{display:flex;gap:8px;align-items:center;justify-content:flex-start;width:100%;text-align:left;border:0;background:none;padding:7px 9px;border-radius:8px;font:inherit;cursor:pointer;color:inherit}
+.menl button.on,.menl button:hover{background:var(--surface-2,#eef3ee)}
+.hist{font-size:.8rem;color:var(--muted);display:grid;gap:3px;max-height:160px;overflow:auto}
+.side{display:grid;gap:12px;align-content:start}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chipb{font-weight:600;font-size:.85rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--fg)}
+.chipb[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.ck input[type=checkbox]{width:18px;height:18px;flex:none;margin-top:3px;padding:0}
+.cki{display:grid;grid-template-columns:18px minmax(0,1fr) 130px 128px 22px;gap:6px;align-items:center;font-size:.93rem;padding:3px 0;border-bottom:1px solid var(--line)}
+.cki input[type=checkbox]{margin-top:0}
+.cki.feito .ckt{text-decoration:line-through;color:var(--muted)}
+.cki select,.cki input[type=date]{font-size:.8rem;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0;width:100%}
+.cki .atr{border-color:#d9534f;color:#b02a37}
+@media (max-width:640px){#kSt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cki{grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 22px;grid-template-areas:"c t t x" ". r p .";row-gap:4px}.cki input[type=checkbox]{grid-area:c}.cki .ckt{grid-area:t}.cki select{grid-area:r}.cki input[type=date]{grid-area:p}.cki .x{grid-area:x}}
+.ck label{font-weight:400!important}
+.vazio{color:var(--muted);font-size:.85rem;padding:6px 4px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" id="lnkPortal" href="../" title="Voltar ao portal"><img id="escLogo" src="../dabar-icon.png" alt="Portal"></a>
+    <img class="clilogo" id="cliLogo" alt="" hidden>
+    <div class="brandtxt"><b id="tQ">Quadro de tarefas</b><span id="tE">Área do cliente</span></div>
+    <div class="spacer"></div>
+    <select id="selQ" aria-label="Quadro" hidden style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface)"></select>
+    <button class="sino" id="instalar" type="button" title="Instalar na tela de início" aria-label="Instalar na tela de início" hidden>📲</button>
+    <button class="sino" id="sino" type="button" aria-label="Notificações" aria-expanded="false" hidden>🔔<span class="bdg" id="sinoN" hidden>0</span></button>
+    <a class="tab" id="lnkVolta" href="../">← Portal</a>
+  </div>
+</header>
+<div class="ticker" id="ticker" hidden aria-label="Mercado e notícias"></div>
+<main class="wrap" id="app"><div class="card"><p class="muted" style="margin:0">Carregando o quadro…</p></div></main>
+<footer class="rodape"><a href="../" title="Tecnologia Dabar"><img src="../dabar-icon.png" alt="">Tecnologia <b>Dabar</b></a></footer>
+<dialog id="dlg" aria-label="Tarefa"></dialog>
+<dialog id="dlgM" aria-label="Membros do quadro"></dialog>
+<div class="toast" id="toast" hidden></div>
+<script>
+(() => {
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dataHora = (iso) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const hojeISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const dBR = (d) => d ? d.split("-").reverse().join("/") : "";
+const dias = (d) => Math.round((new Date(d + "T12:00") - new Date(hojeISO() + "T12:00")) / 864e5);
+const ini = (n) => String(n || "?").split(/\s+/).filter(w => !/^(de|da|do|dos|das|\(.*)$/i.test(w)).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+let toastT; function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4000); }
+
+const CFG = { supabaseUrl: "https://ixwhkwbrhcdhxzpdqhbd.supabase.co", supabaseAnonKey: "sb_publishable_Hgesd1C8xHT9I9S9o8h2qg_kSFtDdZ7" };
+const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "dabar-portal-auth" } });
+const S = { user: null, perfil: null, time: false, quadros: [], proprios: [], outros: [], marc: false, q: null, cols: [], colsAll: [], cards: [], mem: [], pessoas: [], coms: {}, filtro: "todas", busca: "", abertoId: null };
+const MARC = "__marcadas";
+let pedidoInstalar = null;
+const ehApp = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const ehIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const ehCel = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || ehIOS();
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pedidoInstalar = e; const b = document.getElementById("instalar"); if (b && !ehApp()) b.hidden = false; });
+window.addEventListener("appinstalled", () => { const b = document.getElementById("instalar"); if (b) b.hidden = true; pedidoInstalar = null; toast("📲 Quadro instalado na tela de início."); });
+function iniciarInstalar() {
+  try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {}); } catch {}
+  const b = document.getElementById("instalar"); if (!b) return;
+  if (!ehApp() && ehCel()) b.hidden = false;
+  b.onclick = async () => {
+    if (pedidoInstalar) { pedidoInstalar.prompt(); try { await pedidoInstalar.userChoice; } catch {} pedidoInstalar = null; return; }
+    const d = $("#dlgM");
+    d.innerHTML = `<form method="dialog" class="dlg" style="grid-template-columns:minmax(0,1fr);max-width:440px">
+      <div class="row" style="justify-content:space-between"><h2 style="font-size:1.1rem">📲 Salvar na tela de início</h2><button class="btn ghost sm" value="x" aria-label="Fechar">✕</button></div>
+      ${ehIOS() ? `<ol style="margin:0;padding-left:1.2em;line-height:1.7"><li>Abra este quadro no <b>Safari</b>.</li><li>Toque em <b>Compartilhar</b> (o quadrado com a seta para cima ⬆️).</li><li>Role e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>. Pronto: o ícone ${esc(S.marcaNome ? "da " + S.marcaNome : "do quadro")} aparece na tela.</li></ol>`
+      : `<ol style="margin:0;padding-left:1.2em;line-height:1.7"><li>Abra este quadro no <b>Chrome</b>.</li><li>Toque nos <b>três pontinhos ⋮</b> no canto de cima.</li><li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme. Pronto: o ícone ${esc(S.marcaNome ? "da " + S.marcaNome : "do quadro")} aparece na tela.</li></ol>`}
+      <p class="note" style="margin:0">O app abre direto no quadro, em tela cheia, e continua recebendo as atualizações sozinho.</p>
+    </form>`;
+    d.showModal();
+  };
+}
+const VAPID = "BDp7aYHipI_aIhW75Jk6cKNL-UOwoXD4m8-Z7kM9DQ3Ot-J_FAxSuy6MdkwFZg2_AXJ8HvFDueevfhmN3iR5Z70";
+const pushOk = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const b64u = (s) => { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...b].map(c => c.charCodeAt(0))); };
+async function inscricaoAtual() { try { if (!pushOk()) return null; const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch { return null; } }
+async function ativarPush() {
+  if (!pushOk()) { toast(ehIOS() && !ehApp() ? "No iPhone, primeiro salve o quadro na tela de início (botão 📲) e abra por lá." : "Este navegador não aceita avisos. Use o Chrome ou instale o app."); return false; }
+  try {
+    const reg = await navigator.serviceWorker.register("sw.js"); await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { toast("Os avisos foram bloqueados. Libere nas configurações do celular para este app."); return false; }
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID) });
+    const j = sub.toJSON();
+    const { error } = await sb.from("push_inscricoes").upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_id: S.user.id, aparelho: navigator.userAgent.slice(0, 160) }, { onConflict: "endpoint" });
+    if (error) { toast("Não consegui ativar os avisos: " + error.message); return false; }
+    toast("🔔 Avisos ativados neste aparelho."); try { localStorage.setItem("cq.push", "1"); } catch {} return true;
+  } catch (e) { toast("Não consegui ativar os avisos: " + (e.message || e)); return false; }
+}
+async function desativarPush() {
+  const sub = await inscricaoAtual(); if (!sub) return;
+  await sb.from("push_inscricoes").delete().eq("endpoint", sub.endpoint);
+  try { await sub.unsubscribe(); } catch {}
+  toast("Avisos desativados neste aparelho.");
+}
+async function convitePush() {
+  if (!pushOk() || !ehApp()) return;
+  if (Notification.permission === "denied") return;
+  const sub = await inscricaoAtual(); if (sub && Notification.permission === "granted") return;
+  try { if (localStorage.getItem("cq.pushNao") === "1") return; } catch {}
+  const bar = document.createElement("div");
+  bar.className = "convite";
+  bar.innerHTML = `<span>🔔 Receber avisos das tarefas neste celular?</span><button class="btn primary sm" type="button">Ativar</button><button class="btn ghost sm" type="button">Agora não</button>`;
+  document.body.appendChild(bar);
+  const [sim, nao] = bar.querySelectorAll("button");
+  sim.onclick = async () => { if (await ativarPush()) bar.remove(); };
+  nao.onclick = () => { try { localStorage.setItem("cq.pushNao", "1"); } catch {} bar.remove(); };
+}
+function abrirPorUrl(u) {
+  try { const x = new URL(u, location.href); const c = x.searchParams.get("card"); if (c) irParaNotif({ cartao: c, id: Number(x.searchParams.get("n")) || 0, lida: !x.searchParams.get("n") }); } catch {}
+}
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => { if (e.data && e.data.abrir) abrirPorUrl(e.data.abrir); });
+const VERSAO = "20261110125620";
+async function checarVersao() {
+  try {
+    const t = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" }).then(r => r.text());
+    const m = t.match(/const VERSAO = "([^"]+)"/);
+    if (!m || m[1] === VERSAO || m[1] === "__VERSAO__") return;
+    const ocupado = () => $("#dlg").open || document.querySelector(".addf") || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+    if (!ocupado()) { location.reload(); return; }
+    toast("🔄 Nova versão do quadro: a página vai atualizar quando você fechar o card.");
+    const t2 = setInterval(() => { if (!ocupado()) { clearInterval(t2); location.reload(); } }, 3000);
+  } catch {}
+}
+setInterval(checarVersao, 120000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checarVersao(); });
+try { S.ordem = localStorage.getItem("cq.ordem") || ""; } catch { S.ordem = ""; }
+const LOGOS = { "Agro TNZ": "../clientes/agro-tnz.png" };
+const MARCAS = { "Agro TNZ": { titulo: "Agro TNZ", manifest: "manifest-agro-tnz.webmanifest", apple: "tnz-180.png", cor: "#1071B9" } };
+function aplicarMarca(emp) {
+  const m = MARCAS[emp]; if (!m || S.marcaAtual === emp) return; S.marcaAtual = emp; S.marcaNome = m.titulo;
+  const set = (id, attr, v) => { const e = document.getElementById(id); if (e) e.setAttribute(attr, v); };
+  set("lnkMan", "href", m.manifest); set("lnkApple", "href", m.apple); set("mtApp", "content", m.titulo); document.querySelectorAll('meta[name="theme-color"]').forEach(e => e.setAttribute("content", m.cor));
+}
+const PRI = { alta: "Alta", media: "Média", baixa: "Baixa" };
+
+async function iniciar() {
+  const { data: { session } } = await sb.auth.getSession();
+  let slug = new URLSearchParams(location.search).get("e"); if (!slug) try { slug = localStorage.getItem("dabar-esc"); } catch {}
+  slug = (slug || "").toLowerCase();
+  if (!session) { location.href = "../" + (slug ? "?e=" + encodeURIComponent(slug) : ""); return; }
+  S.user = session.user;
+  const { data: mem } = await sb.from("wl_membros").select("papel, nome, wl_escritorios(id, slug, nome, logo_url, cor)").eq("user_id", S.user.id);
+  let m = (mem || []).find(x => x.wl_escritorios && x.wl_escritorios.slug === slug) || (mem || [])[0];
+  let esc0 = m && m.wl_escritorios, papel = m ? m.papel : "";
+  if (!esc0 && slug) { const { data: es } = await sb.from("wl_escritorios").select("id, slug, nome, logo_url, cor").eq("slug", slug).maybeSingle(); if (es) { const { data: sup } = await sb.rpc("wl_suporte_ativo", { p_esc: es.id }); if (sup) { esc0 = es; papel = "admin"; S.suporte = true; } } }
+  if (!esc0) return falha("Você não tem acesso ao quadro de tarefas deste escritório.");
+  if (papel === "cliente") return falha("O quadro de tarefas é da equipe do escritório.");
+  S.wl = esc0; try { localStorage.setItem("dabar-esc", esc0.slug); } catch {}
+  $("#lnkPortal").href = $("#lnkVolta").href = "../?e=" + encodeURIComponent(esc0.slug);
+  if (esc0.logo_url) $("#escLogo").src = "../" + esc0.logo_url;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(e => e.setAttribute("content", esc0.cor || "#1F2A33"));
+  if (esc0.cor && /^#[0-9a-f]{6}$/i.test(esc0.cor)) { const r = document.documentElement.style; r.setProperty("--brand", esc0.cor); r.setProperty("--brand-2", esc0.cor); }
+  S.perfil = { papel: "", nome: (m && m.nome) || S.user.email };
+  S.time = true;
+  const { data: qs, error } = await sb.from("cq_quadros").select("*").eq("wl_escritorio", esc0.id).order("geral", { ascending: false }).order("nome");
+  if (error) return falha("Não foi possível abrir o quadro: " + error.message);
+  S.quadros = qs || [];
+  const { data: mm } = await sb.from("cq_membros").select("quadro").eq("user_id", S.user.id);
+  const meus = new Set((mm || []).map(x => x.quadro));
+  S.proprios = S.time ? S.quadros : S.quadros.filter(q => meus.has(q.id));
+  S.outros = S.quadros.filter(q => !S.proprios.includes(q));
+  if (!S.proprios.length && !S.outros.length) return falha("Ainda não há quadros neste escritório.");
+  let salvo = new URLSearchParams(location.search).get("q"); if (!salvo) try { salvo = localStorage.getItem("cq.q"); } catch {}
+  S.marc = salvo === MARC && S.outros.length > 0 || !S.proprios.length;
+  S.q = S.marc ? null : (S.proprios.find(q => q.id === salvo) || S.proprios[0]);
+  const sel = $("#selQ");
+  const opts = S.proprios.map(q => [q.id, (S.time ? q.empresa + " · " : "") + q.nome]);
+  if (S.outros.length) opts.push([MARC, `📌 Marcadas para mim`]);
+  if (opts.length > 1 || S.time) {
+    sel.hidden = false;
+    const opt = (v, t) => `<option value="${v}"${(S.marc ? v === MARC : S.q && v === S.q.id) ? " selected" : ""}>${esc(t)}</option>`;
+    if (S.time) {
+      const emps = [...new Set(S.proprios.map(q => q.empresa))].sort((a, b) => a.localeCompare(b));
+      sel.innerHTML = emps.map(e => `<optgroup label="${esc(S.wl ? S.wl.nome : e)}">${S.proprios.filter(q => q.empresa === e).sort((a, b) => (b.geral - a.geral) || a.nome.localeCompare(b.nome)).map(q => opt(q.id, q.nome.replace(" · " + e, ""))).join("")}</optgroup>`).join("") + (S.outros.length ? opt(MARC, "📌 Marcadas para mim") : "");
+    } else sel.innerHTML = opts.map(([v, t]) => opt(v, t)).join("");
+    sel.onchange = () => { if (sel.value === "__liberar") { sel.value = S.marc ? MARC : (S.q ? S.q.id : ""); liberarKanban(); return; } S.marc = sel.value === MARC; S.q = S.marc ? null : S.proprios.find(q => q.id === sel.value); try { localStorage.setItem("cq.q", sel.value); } catch {} S.filtro = "todas"; S.fCriado = ""; S.fAtrib = ""; carregar(); };
+  }
+  await carregar();
+  ligarTempoReal();
+  iniciarNotif();
+  iniciarTicker();
+  iniciarInstalar();
+  convitePush();
+  if (new URLSearchParams(location.search).get("card")) { abrirPorUrl(location.href); history.replaceState(null, "", location.pathname); }
+  setInterval(() => { if (document.visibilityState === "visible" && !$("#dlg").open && !document.querySelector(".addf")) carregar(true); }, 30000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !$("#dlg").open) carregar(true); });
+}
+async function liberarKanban() {
+  const { data } = await sb.rpc("cq_clientes_sem_kanban");
+  const L = data || [];
+  const d = $("#dlgM");
+  d.innerHTML = `<form method="dialog" class="dlg" style="grid-template-columns:minmax(0,1fr);max-width:480px;gap:12px">
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.1rem;margin:0">＋ Liberar Kanban</h2><button class="btn ghost sm" value="x" aria-label="Fechar">✕</button></div>
+    <p class="note" style="margin:0">Cria o quadro geral do cliente (Atribuições, A fazer, Fazendo, Aguardando alguém, Concluído) com você e a equipe Vital. Quem tiver acesso ao portal desse cliente entra sozinho e ganha o quadro com o próprio nome.</p>
+    <div class="field"><label for="lbC">Cliente</label><select id="lbC"><option value="">Escolha…</option>${L.map(x => `<option value="${esc(x.empresa)}">${esc(x.empresa)}${x.origem === "portal" ? " · tem acesso ao portal" : ""}</option>`).join("")}<option value="__outro">Outro nome…</option></select></div>
+    <div class="field" id="lbOF" hidden><label for="lbO">Nome do cliente</label><input id="lbO" type="text" placeholder="Igual ao nome usado no acesso do portal"></div>
+    <div class="field"><label for="lbS">Letreiro (setor do cliente)</label><select id="lbS">${Object.entries(SEG_NOME).map(([k, v]) => `<option value="${k}"${k === "geral" ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></div>
+    <p class="err" id="lbE" hidden></p>
+    <div class="row"><button class="btn primary" type="button" id="lbOk">Liberar</button><button class="btn ghost" value="x">Cancelar</button></div>
+  </form>`;
+  d.showModal();
+  $("#lbC", d).onchange = (e) => { $("#lbOF", d).hidden = e.target.value !== "__outro"; };
+  $("#lbOk", d).onclick = async () => {
+    let emp = $("#lbC", d).value; if (emp === "__outro") emp = $("#lbO", d).value.trim();
+    if (!emp) { const e = $("#lbE", d); e.textContent = "Escolha o cliente."; e.hidden = false; return; }
+    $("#lbOk", d).disabled = true;
+    const { data: qid, error } = await sb.rpc("cq_liberar_kanban", { p_empresa: emp, p_segmento: $("#lbS", d).value });
+    if (error) { $("#lbOk", d).disabled = false; const e = $("#lbE", d); e.textContent = error.message; e.hidden = false; return; }
+    try { localStorage.setItem("cq.q", qid); } catch {}
+    toast("Kanban liberado para " + emp + ".");
+    setTimeout(() => location.reload(), 600);
+  };
+}
+function falha(msg) { $("#app").innerHTML = `<div class="card stack"><h2 style="font-size:1.2rem">Quadro de tarefas</h2><p>${esc(msg)}</p><div><a class="btn" href="../">Voltar ao portal</a></div></div>`; }
+
+async function carregar(silencioso) {
+  let c, k, m;
+  if (S.marc) {
+    const ids = S.outros.map(q => q.id);
+    $("#tQ").textContent = "Marcadas para mim"; $("#tE").textContent = "Tarefas de outros quadros em que você foi marcado(a)"; document.title = "Marcadas para mim · " + S.wl.nome;
+    [c, k] = await Promise.all([sb.from("cq_colunas").select("*").in("quadro", ids).order("ordem"), sb.from("cq_cartoes").select("*").in("quadro", ids).eq("arquivado", false).or(`responsavel.eq.${S.user.id},participantes.cs.{${S.user.id}}`).order("ordem")]);
+    m = { data: [] };
+  } else {
+    $("#tQ").textContent = S.q.nome; $("#tE").textContent = S.wl.nome + " · Tarefas"; document.title = S.q.nome + " · " + S.wl.nome;
+    const Q = S.q.id;
+    [c, k, m] = await Promise.all([
+      sb.from("cq_colunas").select("*").eq("quadro", Q).order("ordem"),
+      sb.from("cq_cartoes").select("*").eq("quadro", Q).eq("arquivado", false).order("ordem"),
+      sb.from("cq_membros").select("*").eq("quadro", Q).order("nome"),
+    ]);
+    if (S.q.geral && !c.error && !k.error) {
+      const ids = S.quadros.filter(q => q.empresa === S.q.empresa && q.id !== Q).map(q => q.id);
+      if (ids.length) {
+        const [f, fc] = await Promise.all([
+          sb.from("cq_cartoes").select("*").in("quadro", ids).eq("arquivado", false).order("ordem"),
+          sb.from("cq_colunas").select("*").in("quadro", ids).order("ordem"),
+        ]);
+        if (!f.error) { k.data = (k.data || []).concat(f.data || []); c.data = (c.data || []).concat(fc.data || []); }
+      }
+    }
+    if (S.q.dono && !c.error && !k.error) {
+      const d = S.q.dono;
+      const mesmos = S.quadros.filter(q => q.empresa === S.q.empresa && q.id !== Q).map(q => q.id);
+      const f = await sb.from("cq_cartoes").select("*").in("quadro", mesmos.length ? mesmos : ["00000000-0000-0000-0000-000000000000"]).eq("arquivado", false).or(`responsavel.eq.${d},participantes.cs.{${d}},para_todos.eq.true`).order("ordem");
+      if (!f.error && f.data && f.data.length) {
+        const qs = [...new Set(f.data.map(x => x.quadro))];
+        const fc = await sb.from("cq_colunas").select("*").in("quadro", qs).order("ordem");
+        k.data = (k.data || []).concat(f.data); c.data = (c.data || []).concat(fc.data || []);
+      }
+    }
+  }
+  if (c.error || k.error) { if (!silencioso) falha("Erro ao carregar: " + (c.error || k.error).message); return; }
+  S.colsAll = c.data || []; S.cards = k.data || []; S.mem = m.data || [];
+  if (S.marc) {
+    const vist = new Map();
+    for (const col of S.colsAll) if (!vist.has(col.nome)) vist.set(col.nome, { id: "v:" + col.nome, nome: col.nome, ordem: col.ordem, concluida: col.concluida, referencia: col.referencia });
+    S.cols = [...vist.values()].sort((a, b) => a.ordem - b.ordem);
+    for (const x of S.cards) x._v = "v:" + ((S.colsAll.find(col => col.id === x.coluna) || {}).nome || "");
+  } else {
+    S.cols = S.colsAll.filter(col => col.quadro === S.q.id);
+    for (const x of S.cards) {
+      if (x.quadro === S.q.id) { x._v = x.coluna; continue; }
+      const nm = (S.colsAll.find(col => col.id === x.coluna) || {}).nome;
+      x._v = (S.cols.find(col => col.nome === nm) || S.cols[0] || {}).id;
+    }
+  }
+  const emp = S.marc ? (S.outros[0] || {}).empresa : S.q.empresa;
+  aplicarMarca(emp);
+  if (S.q) { const sg = S.q.segmento || "geral"; if (S.seg && S.seg !== sg) { S.seg = sg; carregarTicker(); } }
+  { const lg = $("#cliLogo"), src = S.wl ? null : LOGOS[emp]; if (src) { lg.src = src; lg.alt = emp; lg.hidden = false; } else lg.hidden = true; }
+  if (emp && S.empP !== emp) { const { data } = await sb.rpc("cq_pessoas", { p_empresa: emp }); S.pessoas = (data || []).sort((a, b) => a.nome.localeCompare(b.nome)); S.empP = emp; try { const r = await sb.rpc("cq_pessoas_vital", { p_empresa: emp }); S.vital = new Set((r.data || []).map(x => typeof x === "string" ? x : Object.values(x)[0])); } catch { S.vital = new Set(); } }
+  const ids = S.cards.map(x => x.id);
+  S.coms = {};
+  if (ids.length) { const { data } = await sb.from("cq_comentarios").select("cartao").in("cartao", ids); for (const r of data || []) S.coms[r.cartao] = (S.coms[r.cartao] || 0) + 1; }
+  S.anx = {};
+  if (ids.length) { const { data } = await sb.from("cq_anexos").select("cartao").in("cartao", ids); for (const r of data || []) S.anx[r.cartao] = (S.anx[r.cartao] || 0) + 1; }
+  render();
+}
+const nomeDe = (uid) => (S.pessoas.find(m => m.user_id === uid) || S.mem.find(m => m.user_id === uid) || {}).nome || "";
+const colDe = (id) => S.colsAll.find(c => c.id === id) || S.cols.find(c => c.id === id) || {};
+const quadroNome = (id) => (S.quadros.find(q => q.id === id) || {}).nome || "";
+const meuNome = () => nomeDe(S.user.id) || S.perfil.nome || "Usuário";
+async function evento(acao, detalhe, cartao, quadro) { await sb.from("cq_eventos").insert({ quadro: quadro || (S.q && S.q.id), cartao: cartao || null, user_id: S.user.id, nome: meuNome(), acao, detalhe: detalhe || null }); }
+
+function venc(k) { if (k.prazo) return k.prazo; const it = (Array.isArray(k.checklist) ? k.checklist : []).filter(i => !i.ok && i.prazo).map(i => i.prazo).sort()[0]; return it || ""; }
+function porPrazo(a, b) { const x = venc(a), y = venc(b); if (x && y) return x < y ? -1 : x > y ? 1 : a.ordem - b.ordem; if (x) return -1; if (y) return 1; return a.ordem - b.ordem; }
+function dataLocal(iso) { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
+function placarHTML() {
+  let aberto = true, per = S.per; try { const sv = localStorage.getItem("cq.placar"); aberto = sv ? sv !== "0" : !matchMedia("(max-width:640px)").matches; per = per || localStorage.getItem("cq.per") || "semana"; } catch { per = per || "semana"; }
+  S.per = per;
+  const hoje = hojeISO(), d0 = new Date(hoje + "T12:00");
+  const dIni = per === "mes" ? hoje.slice(0, 8) + "01" : dataLocal(new Date(d0.getTime() - ((d0.getDay() + 6) % 7) * 864e5).toISOString());
+  const vit = S.vital || new Set();
+  const cards = S.cards.filter(k => !colDe(k.coluna).referencia);
+  const fimDe = (k) => !!colDe(k.coluna).concluida;
+  const temTarefa = (u) => cards.some(k => k.responsavel === u || (k.participantes || []).includes(u) || (Array.isArray(k.checklist) && k.checklist.some(i => i.resp === u)));
+  const pessoas = S.pessoas.filter(m => !vit.has(m.user_id) || temTarefa(m.user_id));
+  const L = pessoas.map(m => {
+    const u = m.user_id;
+    const meus = cards.filter(k => k.responsavel === u || (k.participantes || []).includes(u) || (k.para_todos && !vit.has(u)));
+    const ent = meus.filter(k => fimDe(k) && k.concluido_em && dataLocal(k.concluido_em) >= dIni && (k.responsavel === u || (!k.responsavel && ((k.participantes || []).includes(u) || (k.para_todos && !vit.has(u))))));
+    const comPrazo = ent.filter(k => k.prazo), noPrazo = comPrazo.filter(k => dataLocal(k.concluido_em) <= k.prazo);
+    const abertas = meus.filter(k => !fimDe(k));
+    const itensAtr = cards.filter(k => !fimDe(k)).reduce((n, k) => n + (Array.isArray(k.checklist) ? k.checklist.filter(i => i.resp === u && !i.ok && i.prazo && dias(i.prazo) < 0).length : 0), 0);
+    const atr = abertas.filter(k => k.prazo && dias(k.prazo) < 0);
+    const rotAtr = atr.filter(k => k.recorrencia);
+    const itensOk = cards.reduce((n, k) => n + (Array.isArray(k.checklist) ? k.checklist.filter(i => i.resp === u && i.ok).length : 0), 0);
+    const pct = comPrazo.length ? Math.round(100 * noPrazo.length / comPrazo.length) : null;
+    const sem = abertas.filter(k => k.prazo && dias(k.prazo) >= 0 && dias(k.prazo) <= 7).length;
+    return { m, ent: ent.length, pct, abertas: abertas.length, atr: atr.length + itensAtr, sem, rotAtr: rotAtr.length, itensOk, tot: ent.length + abertas.length };
+  });
+  const LT = L;
+  const filtroP = S.filtro === "atrasadas" ? ["atr", "quem tem atraso"] : S.filtro === "semana" ? ["sem", "quem tem tarefa vencendo em 7 dias"] : S.filtro === "abertas" ? ["abertas", "quem tem tarefa em aberto"] : null;
+  let LV = filtroP ? LT.filter(x => x[filtroP[0]] > 0) : LT;
+  if (S.fAtrib) LV = LV.filter(x => x.m.user_id === S.fAtrib);
+  const maxEnt = Math.max(0, ...L.map(x => x.ent));
+  const totEnt = L.reduce((n, x) => n + x.ent, 0), totAtr = L.reduce((n, x) => n + x.atr, 0);
+  const cp = cards.filter(k => fimDe(k) && k.concluido_em && dataLocal(k.concluido_em) >= dIni && k.prazo);
+  const pctTime = cp.length ? Math.round(100 * cp.filter(k => dataLocal(k.concluido_em) <= k.prazo).length / cp.length) : null;
+  const termo = totAtr === 0 && totEnt > 0 ? ["🔥", "Time on fire! Nenhuma tarefa atrasada."] : pctTime == null ? ["🌱", "Período começando: bora pra cima!"] : pctTime >= 85 && totAtr <= 2 ? ["😎", "No ritmo certo."] : pctTime >= 60 ? ["⚡", "Dá pra acelerar um pouquinho."] : ["🐢", "Hora do mutirão: vamos zerar os atrasos?"];
+  const selos = (x) => {
+    const b = [];
+    if (x.ent && x.ent === maxEnt) b.push("🏆 Mais entregas");
+    if (x.pct === 100 && x.ent >= 2) b.push("⏱️ Relógio suíço");
+    if (!x.atr && x.tot) b.push("🧹 Mesa limpa");
+    if (!x.rotAtr && cards.some(k => k.recorrencia && k.responsavel === x.m.user_id)) b.push("🔁 Rotina em dia");
+    if (x.itensOk >= 5) b.push("☑️ Rainha do checklist");
+    return b;
+  };
+  const rot = per === "mes" ? "neste mês" : "nesta semana";
+  return `<details class="placar" id="placar"${aberto ? " open" : ""}>
+    <summary>🏁 Placar do time <span class="chips" style="font-family:var(--body,inherit)"><button class="chipb" type="button" data-per="semana" aria-pressed="${per === "semana"}">Semana</button><button class="chipb" type="button" data-per="mes" aria-pressed="${per === "mes"}">Mês</button></span><span class="ab">${aberto ? "recolher" : "mostrar"}</span></summary>
+    <div class="plc">
+      <div class="plt">
+        <div class="termo"><b>${termo[0]} ${termo[1]}</b><div class="note" style="margin:2px 0 0">${totEnt} entrega${totEnt === 1 ? "" : "s"} ${rot}${pctTime != null ? ` · ${pctTime}% no prazo` : ""} · ${totAtr} atrasada${totAtr === 1 ? "" : "s"} agora</div>${pctTime != null ? `<div class="barra" role="img" aria-label="${pctTime}% das entregas no prazo"><i style="width:${pctTime}%"></i></div>` : ""}</div>
+      </div>
+      ${filtroP || S.fAtrib ? `<div class="note" style="margin:0">Mostrando só ${filtroP ? filtroP[1] : "a pessoa filtrada"} · <button type="button" class="chipb" id="plLimpa" style="padding:2px 10px">mostrar todos</button></div>` : ""}
+      <div class="pls">${LV.map(x => `<div class="pp">
+        <div class="hd"><span class="av">${esc(ini(x.m.nome))}</span><b>${esc(x.m.nome.split(" ")[0])}</b></div>
+        <div class="nums"><button type="button" class="pn" data-pu="${x.m.user_id}" data-pf="todas" title="Ver as tarefas de ${esc(x.m.nome)}"><strong>${x.ent}</strong>entregas</button><span><strong>${x.pct == null ? "–" : x.pct + "%"}</strong>no prazo</span><button type="button" class="pn" data-pu="${x.m.user_id}" data-pf="abertas" title="Ver as tarefas em aberto de ${esc(x.m.nome)}"><strong>${x.abertas}</strong>em aberto</button><button type="button" class="pn" data-pu="${x.m.user_id}" data-pf="atrasadas" title="Ver as atrasadas de ${esc(x.m.nome)}"><strong style="${x.atr ? "color:var(--bad)" : ""}">${x.atr}</strong>atrasada${x.atr === 1 ? "" : "s"}</button></div>
+        <div class="mini" role="img" aria-label="${x.ent} entregas"><i style="width:${maxEnt ? Math.round(100 * x.ent / maxEnt) : 0}%"></i></div>
+        <div class="bdgs">${selos(x).map(t => `<span>${t}</span>`).join("")}${x.atr ? `<button type="button" class="al pn" data-pu="${x.m.user_id}" data-pf="atrasadas" title="Ver as atrasadas de ${esc(x.m.nome)}">⚠️ ${x.atr} pra colocar em dia ›</button>` : ""}</div>
+      </div>`).join("") || `<p class="note">${filtroP && filtroP[0] === "atr" ? "🎉 Ninguém com atraso!" : filtroP ? "Ninguém nesse filtro." : "Ainda não há entregas " + rot + "."}</p>`}</div>
+      <p class="note" style="margin:0">Conta as tarefas em que a pessoa é responsável, está marcada ou que são para "Todos". Atrasadas incluem itens de checklist da pessoa com prazo vencido. Entregas = tarefas que foram para "Concluído" ${rot}.</p>
+    </div>
+  </details>`;
+}
+function passa(k) {
+  if (S.busca) { const b = S.busca.toLowerCase(); if (!((k.titulo || "") + " " + (k.descricao || "") + " " + nomeDe(k.responsavel)).toLowerCase().includes(b)) return false; }
+  if (S.fCriado && (S.fCriado === "auto" ? k.criado_por : k.criado_por !== S.fCriado)) return false;
+  if (S.fAtrib) { const u = S.fAtrib; if (!(k.para_todos || k.responsavel === u || (k.participantes || []).includes(u) || (Array.isArray(k.checklist) && k.checklist.some(i => i.resp === u)))) return false; }
+  const fim = colDe(k.coluna).concluida;
+  if (S.filtro === "minhas") return k.para_todos || k.responsavel === S.user.id || (k.participantes || []).includes(S.user.id) || (Array.isArray(k.checklist) && k.checklist.some(i => i.resp === S.user.id && !i.ok));
+  if (S.filtro === "abertas") return !fim && !colDe(k.coluna).referencia;
+  if (S.filtro === "semana") return !fim && !colDe(k.coluna).referencia && !!k.prazo && dias(k.prazo) >= 0 && dias(k.prazo) <= 7;
+  if (S.filtro === "atrasadas") return !fim && k.prazo && dias(k.prazo) < 0;
+  if (S.filtro === "semdono") return !k.responsavel && !k.para_todos;
+  return true;
+}
+function prazoPill(k, fim) {
+  if (!k.prazo) return "";
+  if (fim) return `<span class="pill okp">✓ ${dBR(k.prazo)}</span>`;
+  const d = dias(k.prazo);
+  const cls = d < 0 ? "atr" : d <= 2 ? "prox" : "";
+  const txt = d < 0 ? `Atrasada ${-d}d` : d === 0 ? "Vence hoje" : d === 1 ? "Vence amanhã" : dBR(k.prazo);
+  return `<span class="pill ${cls}">${txt}</span>`;
+}
+function cardHTML(k) {
+  const fim = colDe(k.coluna).concluida;
+  const ck = Array.isArray(k.checklist) ? k.checklist : [];
+  const feitos = ck.filter(i => i.ok).length;
+  const resp = k.para_todos ? "" : nomeDe(k.responsavel);
+  const ckAtr = fim ? 0 : ck.filter(i => !i.ok && i.prazo && dias(i.prazo) < 0).length;
+  const ckMeu = ck.filter(i => !i.ok && i.resp === S.user.id).length;
+  return `<button class="k" draggable="true" data-id="${k.id}" type="button" aria-label="${esc(k.titulo)}">
+    <span class="t">${esc(k.titulo)}</span>
+    <span class="m">${S.marc || (S.q && k.quadro !== S.q.id) ? `<span class="pill" title="Tarefa do quadro ${esc(quadroNome(k.quadro))}">↗ ${esc(quadroNome(k.quadro))}</span>` : ""}${k.aguardando ? `<span class="pill prox" title="Aguardando">⏳ ${esc(k.aguardando)}</span>` : ""}${k.recorrencia ? `<span title="Rotina automática (recorrente)">🔁</span>` : ""}${(k.participantes || []).length ? `<span title="Pessoas marcadas">👥 ${k.participantes.length}</span>` : ""}${k.prioridade ? `<span class="pill ${k.prioridade}">${PRI[k.prioridade]}</span>` : ""}${prazoPill(k, fim)}${ck.length ? `<span class="pill${feitos === ck.length ? " okp" : ""}">☑ ${feitos}/${ck.length}</span>` : ""}${ckAtr ? `<span class="pill atr" title="Itens do checklist com prazo vencido">☑ ${ckAtr} atrasado${ckAtr > 1 ? "s" : ""}</span>` : ""}${ckMeu && k.responsavel !== S.user.id ? `<span class="pill" title="Itens do checklist para você">☑ ${ckMeu} seu${ckMeu > 1 ? "s" : ""}</span>` : ""}${S.coms[k.id] ? `<span>💬 ${S.coms[k.id]}</span>` : ""}${(S.anx || {})[k.id] ? `<span title="Anexos">📎 ${S.anx[k.id]}</span>` : ""}${k.para_todos ? `<span class="pill" title="Responsável: todos">👥 Todos</span>` : ""}${resp ? `<span class="av" title="${esc(resp)}">${esc(ini(resp))}</span>` : ""}</span>
+  </button>`;
+}
+function render() {
+  const abertas = S.cards.filter(k => !colDe(k.coluna).concluida && !colDe(k.coluna).referencia);
+  const atr = abertas.filter(k => k.prazo && dias(k.prazo) < 0).length;
+  const semana = abertas.filter(k => k.prazo && dias(k.prazo) >= 0 && dias(k.prazo) <= 7).length;
+  const minhas = abertas.filter(k => k.para_todos || k.responsavel === S.user.id || (k.participantes || []).includes(S.user.id)).length;
+  const F = [["todas", "Todas"], ["minhas", `Minhas (${minhas})`], ["atrasadas", `Atrasadas (${atr})`], ["semdono", "Sem responsável"]];
+  $("#app").innerHTML = `
+  <div class="bar">
+    <div class="kpis"><button type="button" class="kpi" data-k="abertas" aria-pressed="${S.filtro === "abertas"}" title="Mostrar só as tarefas em aberto"><b>${abertas.length}</b>em aberto</button><button type="button" class="kpi${atr ? " bad" : ""}" data-k="atrasadas" aria-pressed="${S.filtro === "atrasadas"}" title="Mostrar só as atrasadas"><b>${atr}</b>atrasada${atr === 1 ? "" : "s"}</button><button type="button" class="kpi" data-k="semana" aria-pressed="${S.filtro === "semana"}" title="Mostrar só as que vencem nos próximos 7 dias"><b>${semana}</b><span class="lg">vencem em 7 dias</span><span class="sh">em 7 dias</span></button></div>
+    <div class="spacer"></div>
+    <input type="search" id="busca" placeholder="Buscar…" value="${esc(S.busca)}" aria-label="Buscar">
+    <div class="ctl"><select id="fOrd" class="fsel" aria-label="Organizar por"><option value="">Organizar: manual</option><option value="prazo"${S.ordem === "prazo" ? " selected" : ""}>Organizar: vencimento</option></select>
+    <select id="fCri" class="fsel" aria-label="Criado por"><option value="">Criado por: todos</option><option value="auto"${S.fCriado === "auto" ? " selected" : ""}>Criado por: rotina automática</option>${S.pessoas.map(m => `<option value="${m.user_id}"${S.fCriado === m.user_id ? " selected" : ""}>Criado por: ${esc(m.nome)}</option>`).join("")}</select>
+    <select id="fAtr" class="fsel" aria-label="Atribuído a"><option value="">Atribuído a: todos</option>${S.pessoas.map(m => `<option value="${m.user_id}"${S.fAtrib === m.user_id ? " selected" : ""}>Atribuído a: ${esc(m.nome)}</option>`).join("")}</select>
+    <div class="chips">${F.map(([v, t]) => `<button class="chipb" type="button" data-f="${v}" aria-pressed="${S.filtro === v}">${t}</button>`).join("")}</div>
+    ${S.time && !S.marc && !S.wl ? `<button class="btn sm" type="button" id="bMem">Membros (${S.mem.length})</button>` : ""}</div>
+  </div>
+  ${S.q && S.q.geral && !S.marc ? placarHTML() : ""}
+  <div class="board" style="--n:${Math.max(1, S.cols.length)}">${S.cols.map(c => {
+    const ks = S.cards.filter(k => k._v === c.id).sort(S.ordem === "prazo" ? porPrazo : (a, b) => a.ordem - b.ordem);
+    const vis = ks.filter(passa);
+    return `<section class="col${c.referencia ? " ref" : ""}" data-col="${c.id}" aria-label="${esc(c.nome)}"${c.referencia ? ` title="Atribuições fixas e observações internas: não contam como tarefas em aberto"` : ""}>
+      <div class="colh"><h2>${esc(c.nome)}</h2><span class="n">${ks.length}</span></div>
+      ${vis.map(cardHTML).join("") || `<div class="vazio">${ks.length ? "Nada neste filtro." : "Nenhuma tarefa."}</div>`}
+      ${c.concluida || S.marc ? "" : `<button class="add" type="button" data-add="${c.id}">+ Adicionar tarefa</button>`}
+    </section>`;
+  }).join("")}</div>`;
+  $("#busca").oninput = (e) => { S.busca = e.target.value; const p = e.target.selectionStart; render(); const b = $("#busca"); b.focus(); b.setSelectionRange(p, p); };
+  $$("[data-f]").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; render(); });
+  $$("[data-k]").forEach(b => b.onclick = () => { S.filtro = S.filtro === b.dataset.k ? "todas" : b.dataset.k; render(); });
+  $("#fCri").onchange = (e) => { S.fCriado = e.target.value; render(); };
+  if ($("#placar")) {
+    $("#placar").ontoggle = (e) => { try { localStorage.setItem("cq.placar", e.target.open ? "1" : "0"); } catch {} };
+    $$("[data-pu]").forEach(b => b.onclick = (e) => {
+      e.preventDefault();
+      S.fAtrib = b.dataset.pu; S.filtro = b.dataset.pf || "todas"; render();
+      const bd = document.querySelector(".board"); if (bd) bd.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    if ($("#plLimpa")) $("#plLimpa").onclick = (e) => { e.preventDefault(); S.filtro = "todas"; S.fAtrib = ""; render(); };
+    $$("[data-per]").forEach(b => b.onclick = (e) => { e.preventDefault(); S.per = b.dataset.per; try { localStorage.setItem("cq.per", S.per); } catch {} render(); });
+  }
+  $("#fOrd").onchange = (e) => { S.ordem = e.target.value; try { localStorage.setItem("cq.ordem", S.ordem); } catch {} render(); };
+  $("#fAtr").onchange = (e) => { S.fAtrib = e.target.value; render(); };
+  if ($("#bMem")) $("#bMem").onclick = abrirMembros;
+  $$(".k").forEach(b => {
+    b.onclick = () => abrir(b.dataset.id);
+    b.ondragstart = (e) => { e.dataTransfer.setData("text/plain", b.dataset.id); b.classList.add("drag"); };
+    b.ondragend = () => b.classList.remove("drag");
+  });
+  $$(".col").forEach(col => {
+    col.ondragover = (e) => { e.preventDefault(); col.classList.add("drop"); };
+    col.ondragleave = () => col.classList.remove("drop");
+    col.ondrop = async (e) => {
+      e.preventDefault(); col.classList.remove("drop");
+      const id = e.dataTransfer.getData("text/plain"); const k = S.cards.find(x => x.id === id); if (!k) return;
+      const alvo = [...col.querySelectorAll(".k")].find(el => el.getBoundingClientRect().top + el.offsetHeight / 2 > e.clientY);
+      const irmaos = S.cards.filter(x => x._v === col.dataset.col && x.id !== id).sort((a, b) => a.ordem - b.ordem);
+      let ordem;
+      if (alvo && alvo.dataset.id !== id) { const i = irmaos.findIndex(x => x.id === alvo.dataset.id); const ant = irmaos[i - 1]; ordem = ant ? (ant.ordem + irmaos[i].ordem) / 2 : irmaos[i].ordem - 1; }
+      else ordem = irmaos.length ? irmaos[irmaos.length - 1].ordem + 1 : 1;
+      await mover(k, col.dataset.col, ordem);
+    };
+  });
+  $$("[data-add]").forEach(b => b.onclick = () => novoForm(b));
+}
+async function mover(k, colId, ordem) {
+  let vis = colId;
+  if (String(colId).startsWith("v:")) { const real = S.colsAll.find(c => c.quadro === k.quadro && c.nome === colId.slice(2)); if (!real) return toast("Coluna não encontrada neste quadro."); colId = real.id; }
+  else if (colDe(colId).quadro && colDe(colId).quadro !== k.quadro) { const real = S.colsAll.find(c => c.quadro === k.quadro && c.nome === colDe(colId).nome); if (!real) return toast("Coluna não encontrada no quadro de origem."); colId = real.id; }
+  const de = colDe(k.coluna), para = colDe(colId);
+  const mudou = k.coluna !== colId;
+  const patch = { coluna: colId, ordem, atualizado_em: new Date().toISOString() };
+  if (mudou) patch.concluido_em = para.concluida ? new Date().toISOString() : null;
+  let ag = null;
+  if (mudou && /aguardando/i.test(para.nome || "")) {
+    ag = await perguntarAguardando(k);
+    if (!ag) { render(); return false; }
+    patch.aguardando = ag.nome; patch.aguardando_uid = ag.uid || null;
+    if (ag.uid && ag.uid !== k.responsavel && !(k.participantes || []).includes(ag.uid)) k.participantes = [...(k.participantes || []), ag.uid];
+  } else if (mudou && k.aguardando) { patch.aguardando = null; patch.aguardando_uid = null; }
+  Object.assign(k, patch); k._v = S.marc ? "v:" + para.nome : (S.cols.some(c => c.id === colId) ? colId : ((S.cols.find(c => c.nome === para.nome) || {}).id || vis)); render();
+  const { error } = await sb.from("cq_cartoes").update(patch).eq("id", k.id);
+  if (error) { toast("Não foi possível mover: " + error.message); return carregar(true); }
+  if (mudou) await evento(para.concluida ? "concluiu" : "moveu", `${de.nome} → ${para.nome}` + (ag ? ` (aguardando ${ag.nome})` : ""), k.id, k.quadro);
+  return true;
+}
+function perguntarAguardando(k) {
+  return new Promise((resolve) => {
+    let d = document.getElementById("dlgA");
+    if (!d) { d = document.createElement("dialog"); d.id = "dlgA"; d.setAttribute("aria-label", "Aguardando quem"); document.body.appendChild(d); }
+    d.innerHTML = `<form method="dialog" class="dlg" style="grid-template-columns:minmax(0,1fr);max-width:440px;gap:12px">
+      <div class="row" style="justify-content:space-between"><h2 style="font-size:1.1rem;margin:0">⏳ Aguardando quem?</h2><button class="btn ghost sm" value="x" aria-label="Cancelar">✕</button></div>
+      <p class="note" style="margin:0">Tarefa: “${esc(k.titulo)}”. Para ir para “Aguardando alguém”, informe de quem depende.</p>
+      <div class="field"><label for="agP">Pessoa</label><select id="agP"><option value="">Escolha…</option>${S.pessoas.map(m => `<option value="${m.user_id}">${esc(m.nome)}</option>`).join("")}<option value="__outro">👤 Externo (pessoa da fazenda sem acesso ao quadro)</option></select></div>
+      <div class="field" id="agTF" hidden><label for="agT">Nome do externo</label><input id="agT" type="text" placeholder="Ex.: Marcelo (gerente), Thalia, Rodrigo"></div>
+      <div class="field"><label for="agO">Aguardando o quê? <span class="note">(opcional)</span></label><input id="agO" type="text" placeholder="Ex.: nota fiscal do diesel"></div>
+      <p class="err" id="agE" hidden>Escolha ou escreva quem está sendo aguardado.</p>
+      <div class="row"><button class="btn primary" type="button" id="agOk">Confirmar</button><button class="btn ghost" value="x">Cancelar</button></div>
+    </form>`;
+    let feito = false;
+    const fim = (v) => { if (feito) return; feito = true; resolve(v); if (d.open) d.close(); };
+    d.querySelector("#agP").onchange = (e) => { d.querySelector("#agTF").hidden = e.target.value !== "__outro"; if (e.target.value === "__outro") d.querySelector("#agT").focus(); };
+    d.querySelector("#agOk").onclick = () => {
+      const v = d.querySelector("#agP").value, oq = d.querySelector("#agO").value.trim();
+      let nome = "", uid = null;
+      if (v === "__outro") nome = d.querySelector("#agT").value.trim(); else if (v) { uid = v; nome = (S.pessoas.find(m => m.user_id === v) || {}).nome || ""; }
+      if (!nome) { d.querySelector("#agE").hidden = false; return; }
+      if (!uid) nome = nome + " (externo)";
+      fim({ nome: oq ? `${nome} — ${oq}` : nome, uid });
+    };
+    d.onclose = () => fim(null);
+    d.showModal();
+  });
+}
+function novoForm(btn) {
+  const colId = btn.dataset.add;
+  const f = document.createElement("div"); f.className = "addf";
+  f.innerHTML = `<textarea placeholder="O que precisa ser feito?" aria-label="Título da tarefa"></textarea><div class="row"><button class="btn primary sm" type="button">Adicionar</button><button class="btn ghost sm" type="button">Cancelar</button></div>`;
+  btn.replaceWith(f);
+  const ta = $("textarea", f); ta.focus();
+  const [ok, cancel] = $$("button", f);
+  const salvar = async () => {
+    const t = ta.value.trim(); if (!t) { ta.focus(); return; }
+    ok.disabled = true;
+    const irmaos = S.cards.filter(x => x._v === colId);
+    const ordem = irmaos.length ? Math.max(...irmaos.map(x => x.ordem)) + 1 : 1;
+    const extra = {};
+    if (/aguardando/i.test(colDe(colId).nome || "")) { const ag = await perguntarAguardando({ titulo: t }); if (!ag) { ok.disabled = false; return; } extra.aguardando = ag.nome; extra.aguardando_uid = ag.uid || null; }
+    const { data, error } = await sb.from("cq_cartoes").insert({ quadro: S.q.id, coluna: colId, titulo: t, ordem, criado_por: S.user.id, ...extra }).select().single();
+    if (error) { ok.disabled = false; toast("Não foi possível criar: " + error.message); return; }
+    await evento("criou", t, data.id, S.q.id);
+    data._v = data.coluna; S.cards.push(data); render(); toast("Tarefa criada.");
+    const nb = document.querySelector(`[data-add="${colId}"]`); if (nb) novoForm(nb);
+  };
+  ok.onclick = salvar; cancel.onclick = () => render();
+  ta.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); salvar(); } if (e.key === "Escape") render(); };
+}
+
+/* ---------- cartão aberto ---------- */
+async function abrir(id) {
+  const k = S.cards.find(x => x.id === id); if (!k) return;
+  S.abertoId = id;
+  const d = $("#dlg");
+  const ck = Array.isArray(k.checklist) ? k.checklist.slice() : [];
+  const podeApagar = S.time || k.criado_por === S.user.id;
+  k._pa0 = (k.participantes || []).slice();
+  d.innerHTML = `<form method="dialog" class="dlg" id="fK">
+    <div class="full row" style="align-items:flex-start;flex-wrap:nowrap"><input type="text" class="ttl" id="kT" value="${esc(k.titulo)}" aria-label="Título"><span class="note" id="kSt" aria-live="polite" style="white-space:nowrap;align-self:center;margin:0 4px">Salva automaticamente</span><button class="btn ghost sm" value="x" aria-label="Fechar">✕</button></div>
+    <div class="stack">
+      <div class="field"><label for="kD">Descrição</label><textarea id="kD" placeholder="Detalhes, links, o que precisa para concluir…">${esc(k.descricao || "")}</textarea></div>
+      <div class="field"><label>Checklist</label><div class="prog" id="kP"><i></i></div><div class="ck" id="kC"></div>
+        <div class="row" style="flex-wrap:nowrap"><input type="text" id="kCi" placeholder="Novo item" aria-label="Novo item do checklist"><button class="btn sm" type="button" id="kCa">Incluir</button></div></div>
+      <div class="field"><label for="kCo">Comentários</label><div class="coms" id="kCos"><span class="note">Carregando…</span></div>
+        <div class="menw"><textarea id="kCo" placeholder="Escreva um comentário · digite @ para marcar alguém" style="min-height:60px;width:100%"></textarea><div class="menl" id="kMn" hidden role="listbox" aria-label="Pessoas para marcar"></div></div><div><button class="btn sm" type="button" id="kCoB">Comentar</button></div></div>
+      <div class="field" id="kAxF"><label>Anexos e prints</label><div class="anx" id="kAx"><span class="note">Carregando…</span></div>
+        <div class="anxbar"><input type="file" id="kAxI" multiple hidden><button class="btn sm" type="button" id="kAxB">📎 Anexar arquivo</button><span class="note" style="margin:0">ou cole um print aqui (Ctrl + V) · até 10 MB</span></div></div>
+    </div>
+    <div class="side">
+      ${k.aguardando ? `<div class="field"><label>⏳ Aguardando</label><div class="row" style="flex-wrap:nowrap;gap:8px"><span style="flex:1">${esc(k.aguardando)}${k.aguardando_desde ? ` <span class="note">desde ${dBR(String(k.aguardando_desde).slice(0, 10))}</span>` : ""}</span><button class="btn ghost sm" type="button" id="kAgE">Alterar</button></div></div>` : ""}
+      <div class="field"><label for="kCol">Coluna</label><select id="kCol">${S.colsAll.filter(c => c.quadro === k.quadro).map(c => `<option value="${c.id}"${c.id === k.coluna ? " selected" : ""}>${esc(c.nome)}</option>`).join("")}</select></div>
+      <div class="field"><label for="kR">Responsável</label><select id="kR"><option value="">Ninguém</option><option value="__todos"${k.para_todos ? " selected" : ""}>👥 Todos</option>${S.pessoas.map(m => `<option value="${m.user_id}"${!k.para_todos && m.user_id === k.responsavel ? " selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>
+      <div class="field"><label>Pessoas marcadas</label><div class="ck" id="kPa">${S.pessoas.map(m => `<label><input type="checkbox" value="${m.user_id}"${(k.participantes || []).includes(m.user_id) ? " checked" : ""}><span>${esc(m.nome)}</span></label>`).join("")}</div><p class="note">Quem for marcado vê esta tarefa em "Marcadas para mim", mesmo sem acesso a este quadro.</p></div>
+      <div class="field"><label for="kPz">Prazo</label><input type="date" id="kPz" value="${k.prazo || ""}"></div>
+      <div class="field"><label for="kRec">🔁 Repetir</label><select id="kRec"><option value="nao">Não se repete</option><option value="diaria">Todo dia útil</option><option value="semanal">Toda semana</option><option value="mensal">Todo mês (mesmo dia)</option><option value="ultimo_util">Último dia útil do mês</option></select><p class="note" id="kRecN" style="margin:2px 0 0"></p></div>
+      <div class="field"><label for="kPr">Prioridade</label><select id="kPr"><option value="">Normal</option>${Object.entries(PRI).map(([v, t]) => `<option value="${v}"${k.prioridade === v ? " selected" : ""}>${t}</option>`).join("")}</select></div>
+      <div class="row"><button class="btn primary" type="button" id="kS">Salvar</button>${podeApagar ? `<button class="btn danger sm" type="button" id="kX">Excluir</button>` : ""}<button class="btn ghost sm" type="button" id="kA">Arquivar</button></div>
+      <div class="field"><label>Histórico</label><div class="hist" id="kH"><span>Carregando…</span></div></div>
+      <p class="note">Criada em ${dataHora(k.criado_em)}${k.concluido_em ? ` · concluída em ${dataHora(k.concluido_em)}` : ""}</p>
+    </div>
+  </form>`;
+  const pintaCk = (semSalvar) => {
+    if (!semSalvar && typeof agendar === "function") agendar();
+    const f = ck.filter(i => i.ok).length;
+    $("#kP i").style.width = ck.length ? (100 * f / ck.length) + "%" : "0";
+    $("#kP").hidden = !ck.length;
+    $("#kC").innerHTML = ck.map((it, i) => `<div class="cki${it.ok ? " feito" : ""}"><input type="checkbox" data-i="${i}"${it.ok ? " checked" : ""} aria-label="Concluir: ${esc(it.t)}"><span class="ckt">${esc(it.t)}</span><select data-r="${i}" aria-label="Responsável do item"><option value="">Responsável…</option>${S.pessoas.map(m => `<option value="${m.user_id}"${it.resp === m.user_id ? " selected" : ""}>${esc(m.nome)}</option>`).join("")}</select><input type="date" data-pz="${i}" value="${it.prazo || ""}" aria-label="Prazo do item" class="${!it.ok && it.prazo && dias(it.prazo) < 0 ? "atr" : ""}"><button class="x" type="button" data-rm="${i}" aria-label="Remover item">✕</button></div>`).join("");
+    $$("#kC [data-r]").forEach(sl => sl.onchange = () => {
+      const i = +sl.dataset.r; if (sl.value) ck[i].resp = sl.value; else delete ck[i].resp;
+      if (sl.value && sl.value !== ($("#kR").value || "")) { const cb = $(`#kPa input[value="${sl.value}"]`); if (cb) cb.checked = true; }
+      agendar();
+    });
+    $$("#kC [data-pz]").forEach(dt => dt.onchange = () => { const i = +dt.dataset.pz; if (dt.value) ck[i].prazo = dt.value; else delete ck[i].prazo; pintaCk(); });
+    $$("#kC input[type=checkbox]").forEach(b => b.onchange = () => { ck[+b.dataset.i].ok = b.checked; pintaCk(); });
+    $$("#kC [data-rm]").forEach(b => b.onclick = () => { ck.splice(+b.dataset.rm, 1); pintaCk(); });
+  };
+  pintaCk(true);
+  const addCk = () => { const v = $("#kCi").value.trim(); if (!v) return; ck.push({ t: v, ok: false }); $("#kCi").value = ""; pintaCk(); $("#kCi").focus(); };
+  $("#kCa").onclick = addCk; $("#kCi").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); addCk(); } };
+  d.showModal();
+  carregarComs(k.id); carregarHist(k.id); carregarAnx(k);
+  $("#kAxB").onclick = () => $("#kAxI").click();
+  $("#kAxI").onchange = async (e) => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) await enviarAnx(k, f); };
+  d.onpaste = async (e) => {
+    const fs = [...(e.clipboardData ? e.clipboardData.files : [])];
+    if (!fs.length) return;
+    e.preventDefault();
+    for (const f of fs) await enviarAnx(k, f, true);
+  };
+  const fx = $("#kAxF");
+  fx.ondragover = (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); fx.classList.add("anxdrop"); } };
+  fx.ondragleave = () => fx.classList.remove("anxdrop");
+  fx.ondrop = async (e) => { e.preventDefault(); fx.classList.remove("anxdrop"); for (const f of [...e.dataTransfer.files]) await enviarAnx(k, f); };
+  const ta = $("#kCo"), ml = $("#kMn"); let mOpc = [], mSel = 0, mIni = -1;
+  const semAc = (x) => (x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const fechaM = () => { ml.hidden = true; mOpc = []; mIni = -1; };
+  const pintaM = () => { ml.innerHTML = mOpc.map((m, i) => `<button type="button" role="option" class="${i === mSel ? "on" : ""}" data-mi="${i}"><span class="av">${esc(ini(m.nome))}</span>${esc(m.nome)}</button>`).join(""); ml.hidden = !mOpc.length; $$("[data-mi]", ml).forEach(b => b.onmousedown = (e) => { e.preventDefault(); escolheM(mOpc[+b.dataset.mi]); }); };
+  const escolheM = (m) => { if (!m || mIni < 0) return; const pos = ta.selectionStart; ta.value = ta.value.slice(0, mIni) + "@" + m.nome + " " + ta.value.slice(pos); const c = mIni + m.nome.length + 2; ta.setSelectionRange(c, c); fechaM(); ta.focus(); };
+  ta.oninput = () => {
+    const antes = ta.value.slice(0, ta.selectionStart); const mt = antes.match(/(^|\s)@([^\s@]*)$/);
+    if (!mt) return fechaM();
+    mIni = antes.length - mt[2].length - 1; const q = semAc(mt[2]);
+    mOpc = S.pessoas.filter(m => m.user_id !== S.user.id && semAc(m.nome).split(/\s+/).some(w => w.startsWith(q)) || (q && semAc(m.nome).includes(q) && m.user_id !== S.user.id)).slice(0, 6);
+    mOpc = [...new Map(mOpc.map(m => [m.user_id, m])).values()]; mSel = 0; pintaM();
+  };
+  ta.onkeydown = (e) => {
+    if (ml.hidden) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); mSel = (mSel + 1) % mOpc.length; pintaM(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); mSel = (mSel - 1 + mOpc.length) % mOpc.length; pintaM(); }
+    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); escolheM(mOpc[mSel]); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); fechaM(); }
+  };
+  ta.onblur = () => setTimeout(fechaM, 150);
+  $("#kCoB").onclick = async () => {
+    const t = ta.value.trim(); if (!t) { ta.focus(); return; }
+    const { error } = await sb.from("cq_comentarios").insert({ cartao: k.id, user_id: S.user.id, nome: meuNome(), texto: t });
+    if (error) return toast("Não foi possível comentar: " + error.message);
+    ta.value = ""; fechaM(); S.coms[k.id] = (S.coms[k.id] || 0) + 1; carregarComs(k.id);
+    const cit = S.pessoas.filter(m => t.includes("@" + m.nome));
+    const novos = cit.filter(m => !(k.participantes || []).includes(m.user_id) && m.user_id !== k.responsavel);
+    if (cit.length) await evento("mencionou", cit.map(m => m.nome).join(", "), k.id, k.quadro);
+    if (novos.length) {
+      const part = [...new Set([...(k.participantes || []), ...novos.map(m => m.user_id)])];
+      const r = await sb.from("cq_cartoes").update({ participantes: part, atualizado_em: new Date().toISOString() }).eq("id", k.id);
+      if (r.error) return toast("Comentário salvo, mas não consegui marcar: " + r.error.message);
+      k.participantes = part; k._pa0 = part.slice();
+      for (const m of novos) { const cb = $(`#kPa input[value="${m.user_id}"]`); if (cb) cb.checked = true; }
+      toast("Marcado(a) na tarefa: " + novos.map(m => m.nome).join(", ")); render();
+    }
+    carregarHist(k.id);
+  };
+  let fim = false, tAuto = null, gravando = null, ultimo = "";
+  const coletar = () => ({ titulo: $("#kT").value.trim(), participantes: $$("#kPa input:checked").map(i => i.value), descricao: $("#kD").value.trim() || null, responsavel: ($("#kR").value === "__todos" ? null : $("#kR").value || null), para_todos: $("#kR").value === "__todos", prazo: $("#kPz").value || null, prioridade: $("#kPr").value || null, checklist: ck.map(i => ({ ...i })), coluna: $("#kCol").value });
+  const st = (t) => { const e = $("#kSt"); if (e) e.textContent = t; };
+  ultimo = JSON.stringify(coletar());
+  var agendar = () => { if (fim) return; st("Alterações não salvas…"); clearTimeout(tAuto); tAuto = setTimeout(() => gravar(false), 1200); };
+  async function gravar(fechando) {
+    clearTimeout(tAuto);
+    if (gravando) await gravando;
+    const atual = coletar(), js = JSON.stringify(atual);
+    if (js === ultimo) { st("Salvo ✓"); return true; }
+    if (!atual.titulo) { if (!fechando) st("Falta o título"); else toast("A tarefa precisa de um título: as alterações não foram salvas."); return false; }
+    st("Salvando…");
+    gravando = (async () => { try { return await gravarAgora(atual, js); } finally { gravando = null; } })();
+    return gravando;
+  }
+  async function gravarAgora(atual, js) {
+    const { titulo, participantes } = atual;
+    const prev = JSON.parse(ultimo || "{}");
+    const CAMPOS = ["titulo", "participantes", "descricao", "responsavel", "para_todos", "prazo", "prioridade", "checklist"];
+    const mudou = (c) => JSON.stringify(atual[c] ?? null) !== JSON.stringify(prev[c] ?? null);
+    const novo = { atualizado_em: new Date().toISOString() };
+    for (const c of CAMPOS) if (mudou(c)) novo[c] = atual[c];
+    if (mudou("responsavel") || mudou("para_todos")) { novo.responsavel = atual.responsavel; novo.para_todos = atual.para_todos; }
+    const mud = [];
+    if ("para_todos" in novo || "responsavel" in novo) {
+      if (novo.para_todos && !k.para_todos) mud.push("responsável: Todos");
+      else if (novo.responsavel !== (k.responsavel || null) || (!novo.para_todos && k.para_todos)) mud.push("responsável: " + (nomeDe(novo.responsavel) || "ninguém"));
+    }
+    if ("prazo" in novo && novo.prazo !== (k.prazo || null)) mud.push("prazo: " + (dBR(novo.prazo) || "sem prazo"));
+    const colNova = atual.coluna;
+    if ("checklist" in novo) { const ant = Array.isArray(k.checklist) ? k.checklist : [], usados = new Set();
+      for (const it of novo.checklist) {
+        const j = ant.findIndex((a, x) => !usados.has(x) && a.t === it.t);
+        if (j < 0) { mud.push("checklist: incluiu \"" + it.t + "\""); continue; }
+        usados.add(j); const a = ant[j];
+        if (it.ok && !a.ok) mud.push("checklist: concluiu \"" + it.t + "\"");
+        if (!it.ok && a.ok) mud.push("checklist: reabriu \"" + it.t + "\"");
+        if ((it.resp || "") !== (a.resp || "") && it.resp) mud.push("checklist: \"" + it.t + "\" para " + (nomeDe(it.resp) || "alguém"));
+        if ((it.prazo || "") !== (a.prazo || "") && it.prazo) mud.push("checklist: \"" + it.t + "\" até " + dBR(it.prazo));
+      }
+      ant.forEach((a, x) => { if (!usados.has(x)) mud.push("checklist: removeu \"" + a.t + "\""); });
+    }
+    if ("titulo" in novo && (novo.titulo || "") !== (k.titulo || "")) mud.push("título: " + novo.titulo);
+    const { error } = Object.keys(novo).length > 1 ? await sb.from("cq_cartoes").update(novo).eq("id", k.id) : { error: null };
+    if (error) { st("Erro ao salvar"); toast("Não foi possível salvar: " + error.message); return false; }
+    ultimo = js;
+    Object.assign(k, novo);
+    const marcNovos = !("participantes" in novo) ? [] : participantes.filter(u => !(k._pa0 || []).includes(u)).map(nomeDe).filter(Boolean);
+    if (marcNovos.length) mud.push("marcou: " + marcNovos.join(", "));
+    k._pa0 = participantes.slice();
+    if (mud.length) await evento("editou", mud.join(" · "), k.id, k.quadro);
+    if (colNova !== k.coluna) { const irm = S.cards.filter(x => x.coluna === colNova); const okM = await mover(k, colNova, irm.length ? Math.max(...irm.map(x => x.ordem)) + 1 : 1); if (okM === false && $("#kCol")) { $("#kCol").value = k.coluna; ultimo = JSON.stringify(coletar()); } }
+    st("Salvo ✓"); render(); return true;
+  }
+  $("#kS").onclick = async () => { if (await gravar(true)) { fim = true; d.close(); toast("Tarefa salva."); } };
+  $("#kT").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); gravar(false); } };
+  const FORA = ["kCo", "kCi", "kAxI", "kRec"];
+  if ($("#kAgE")) $("#kAgE").onclick = async () => {
+    const ag = await perguntarAguardando(k); if (!ag) return;
+    const { error } = await sb.from("cq_cartoes").update({ aguardando: ag.nome, aguardando_uid: ag.uid || null, atualizado_em: new Date().toISOString() }).eq("id", k.id);
+    if (error) return toast("Não foi possível alterar: " + error.message);
+    k.aguardando = ag.nome; k.aguardando_uid = ag.uid || null;
+    await evento("editou", "aguardando: " + ag.nome, k.id, k.quadro);
+    render(); const el = $("#kAgE"); if (el && el.previousElementSibling) el.previousElementSibling.textContent = ag.nome;
+  };
+  $("#fK").addEventListener("input", (e) => { if (!FORA.includes(e.target.id)) agendar(); });
+  $("#fK").addEventListener("change", (e) => { if (!FORA.includes(e.target.id)) agendar(); });
+  const DSEM = ["", "segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"];
+  const notaRec = (tipo) => {
+    const base = $("#kPz").value || hojeISO(), dt = new Date(base + "T12:00"), dw = ((dt.getDay() + 6) % 7) + 1;
+    const t = { nao: "", diaria: "Uma nova tarefa a cada dia útil (não acumula se a anterior estiver aberta).", semanal: `Uma nova tarefa toda ${DSEM[dw]}.`, mensal: `Uma nova tarefa todo dia ${dt.getDate()}.`, ultimo_util: "Uma nova tarefa no último dia útil de cada mês." }[tipo] || "";
+    $("#kRecN").textContent = t ? t + " Criadas sozinhas às 6h, com o mesmo responsável e checklist." : "";
+  };
+  (async () => {
+    if (!k.recorrencia) return;
+    const { data: r } = await sb.from("cq_recorrencias").select("regra, ativo").eq("id", k.recorrencia).maybeSingle();
+    if (!r || !r.ativo) return;
+    const v = { diaria_util: "diaria", semanal: "semanal", mensal_dia: "mensal", mensal_ultimo_util: "ultimo_util" }[r.regra];
+    if (v) { $("#kRec").value = v; notaRec(v); } else { const o = document.createElement("option"); o.value = "outro"; o.textContent = "Rotina da ata (personalizada)"; $("#kRec").appendChild(o); $("#kRec").value = "outro"; $("#kRecN").textContent = "Rotina definida pela Vital. Escolha outra opção para mudar ou \"Não se repete\" para parar."; }
+  })();
+  $("#kRec").onchange = async (e) => {
+    const tipo = e.target.value; if (tipo === "outro") return;
+    e.target.disabled = true;
+    await gravar(false);
+    const { data, error } = await sb.rpc("cq_definir_recorrencia", { p_cartao: k.id, p_tipo: tipo });
+    e.target.disabled = false;
+    if (error) { toast("Não foi possível definir a repetição: " + error.message); return; }
+    if (data && data.recorrencia) k.recorrencia = data.recorrencia;
+    notaRec(tipo); carregarHist(k.id); render();
+    toast(tipo === "nao" ? "Tarefa não vai mais se repetir." : "Repetição definida.");
+  };
+  d.onclose = async () => { if (fim) return; fim = true; await gravar(true); carregar(true); };
+  $("#kA").onclick = async () => {
+    const { error } = await sb.from("cq_cartoes").update({ arquivado: true }).eq("id", k.id);
+    if (error) return toast("Não foi possível arquivar: " + error.message);
+    await evento("arquivou", k.titulo, k.id, k.quadro);
+    fim = true; clearTimeout(tAuto); S.cards = S.cards.filter(x => x.id !== k.id); d.close(); render(); toast("Tarefa arquivada.");
+  };
+  if ($("#kX")) $("#kX").onclick = async () => {
+    if ($("#kX").dataset.conf !== "1") { $("#kX").dataset.conf = "1"; $("#kX").textContent = "Confirmar exclusão"; return; }
+    await evento("excluiu", k.titulo, null, k.quadro);
+    const { error } = await sb.from("cq_cartoes").delete().eq("id", k.id);
+    if (error) return toast("Não foi possível excluir: " + error.message);
+    fim = true; clearTimeout(tAuto); S.cards = S.cards.filter(x => x.id !== k.id); d.close(); render(); toast("Tarefa excluída.");
+  };
+}
+async function carregarComs(id) {
+  const { data } = await sb.from("cq_comentarios").select("*").eq("cartao", id).order("em");
+  const el = $("#kCos"); if (!el) return;
+  const marca = (h) => { for (const m of [...S.pessoas].sort((a, b) => b.nome.length - a.nome.length)) h = h.split("@" + esc(m.nome)).join(`<span class="men">@${esc(m.nome)}</span>`); return h; };
+  el.innerHTML = (data || []).map(c => `<div class="com"><small>${esc(c.nome)} · ${dataHora(c.em)}</small>${marca(esc(c.texto)).replace(/\n/g, "<br>")}</div>`).join("") || `<span class="note">Nenhum comentário ainda.</span>`;
+  el.scrollTop = el.scrollHeight;
+}
+const NTXT = { mencao: "mencionou você em", comentou: "comentou em", moveu: "moveu", concluiu: "concluiu", editou: "alterou", criou: "criou", anexou: "anexou um arquivo em", "apagou anexo": "apagou um anexo de", arquivou: "arquivou" };
+function textoNotif(n) { return `<b>${esc(n.autor_nome || "Alguém")}</b> ${esc(NTXT[n.tipo] || n.tipo)} <b>“${esc(n.titulo || "tarefa")}”</b>`; }
+function quando(iso) { const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 1 ? "agora" : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : dataHora(iso); }
+async function iniciarNotif() {
+  const b = $("#sino"); if (!b) return; b.hidden = false;
+  await contarNotif();
+  b.onclick = (e) => { e.stopPropagation(); const pn = $("#painelN"); if (pn && !pn.hidden) return fecharNotif(); abrirNotif(); try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {} };
+  document.addEventListener("click", (e) => { const pn = $("#painelN"); if (pn && !pn.hidden && !pn.contains(e.target)) fecharNotif(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharNotif(); });
+  if (sb.channel) sb.channel("cq-notif-" + S.user.id).on("postgres_changes", { event: "INSERT", schema: "public", table: "cq_notificacoes", filter: `user_id=eq.${S.user.id}` }, (p) => {
+    const n = p.new || {}; contarNotif();
+    const txt = (n.autor_nome || "Alguém") + " " + (NTXT[n.tipo] || n.tipo) + " “" + (n.titulo || "tarefa") + "”";
+    toast("🔔 " + txt);
+    try { if (document.hidden && "Notification" in window && Notification.permission === "granted") { const no = new Notification("Tarefas · " + S.wl.nome, { body: txt + (n.texto ? "\n" + n.texto : ""), tag: "cq-" + n.id }); no.onclick = () => { window.focus(); irParaNotif(n); no.close(); }; } } catch {}
+    if (!$("#painelN")?.hidden) abrirNotif();
+  }).subscribe();
+}
+async function contarNotif() {
+  const { count } = await sb.from("cq_notificacoes").select("id", { count: "exact", head: true }).eq("user_id", S.user.id).eq("lida", false);
+  const bd = $("#sinoN"); if (!bd) return; bd.hidden = !count; bd.textContent = count > 99 ? "99+" : String(count || 0);
+  document.title = (count ? `(${count}) ` : "") + document.title.replace(/^\(\d+\+?\) /, "");
+}
+function fecharNotif() { const pn = $("#painelN"); if (pn) pn.hidden = true; $("#sino")?.setAttribute("aria-expanded", "false"); }
+async function abrirNotif() {
+  let pn = $("#painelN"); if (!pn) { pn = document.createElement("div"); pn.id = "painelN"; pn.className = "painelN"; pn.setAttribute("role", "dialog"); pn.setAttribute("aria-label", "Notificações"); document.body.appendChild(pn); }
+  pn.hidden = false; $("#sino").setAttribute("aria-expanded", "true");
+  const { data } = await sb.from("cq_notificacoes").select("*").eq("user_id", S.user.id).order("em", { ascending: false }).limit(40);
+  const L = data || [];
+  const subAtual = await inscricaoAtual();
+  const pushLinha = pushOk() || ehIOS() ? `<div class="hd" style="gap:8px;flex-wrap:wrap"><span class="note" style="margin:0">${subAtual && Notification.permission === "granted" ? "📲 Avisos ativos neste aparelho" : "📲 Receba os avisos mesmo com o quadro fechado"}</span>${subAtual && Notification.permission === "granted" ? `<button class="btn ghost sm" type="button" id="nPushOff">Desativar</button>` : `<button class="btn primary sm" type="button" id="nPushOn">Ativar neste aparelho</button>`}</div>` : "";
+  pn.innerHTML = pushLinha + `<div class="hd"><b>Notificações</b><button class="btn ghost sm" type="button" id="nTodas"${L.some(n => !n.lida) ? "" : " disabled"}>Marcar todas como lidas</button></div>` +
+    (L.map(n => `<button class="it${n.lida ? "" : " nova"}" type="button" data-n="${n.id}">${n.lida ? "" : "● "}${textoNotif(n)}${n.texto ? `<q>${esc(n.texto)}</q>` : ""}<small>${quando(n.em)}</small></button>`).join("") || `<p class="note" style="padding:10px">Nenhuma notificação ainda. Você recebe aviso quando for mencionado(a) ou quando um card seu ou em que foi marcado(a) mudar.</p>`);
+  if ($("#nPushOn")) $("#nPushOn").onclick = async (e) => { e.stopPropagation(); await ativarPush(); abrirNotif(); };
+  if ($("#nPushOff")) $("#nPushOff").onclick = async (e) => { e.stopPropagation(); await desativarPush(); abrirNotif(); };
+  $("#nTodas").onclick = async (e) => { e.stopPropagation(); await sb.from("cq_notificacoes").update({ lida: true }).eq("user_id", S.user.id).eq("lida", false); contarNotif(); abrirNotif(); };
+  $$("[data-n]", pn).forEach(b => b.onclick = async (e) => { e.stopPropagation(); const n = L.find(x => String(x.id) === b.dataset.n); fecharNotif(); if (n) irParaNotif(n); });
+}
+async function irParaNotif(n) {
+  if (!n.lida) { await sb.from("cq_notificacoes").update({ lida: true }).eq("id", n.id); contarNotif(); }
+  if (!n.cartao) return;
+  if (!S.cards.some(x => x.id === n.cartao)) {
+    const sel = $("#selQ");
+    const alvo = S.proprios.find(q => q.id === n.quadro) || S.proprios.find(q => q.geral && q.empresa === (S.quadros.find(x => x.id === n.quadro) || {}).empresa) || S.proprios.find(q => q.dono === S.user.id);
+    if (alvo) { S.marc = false; S.q = alvo; if (sel) sel.value = alvo.id; }
+    else if (S.outros.length) { S.marc = true; S.q = null; if (sel) sel.value = MARC; }
+    S.filtro = "todas"; S.fCriado = ""; S.fAtrib = ""; S.busca = "";
+    await carregar(true);
+  }
+  if (S.cards.some(x => x.id === n.cartao)) abrir(n.cartao); else toast("Essa tarefa não está mais disponível (pode ter sido arquivada ou excluída).");
+}
+const SEG_NOME = { agro: "Mercado agro", geral: "Mercado", tecnologia: "Tecnologia", saude: "Saúde", construcao: "Construção e imóveis", alimentacao: "Alimentação" };
+const brl = (v) => v;
+const PAPO_URL = new URL("../papo-de-porteira/noticias/", location.href).href;
+async function iniciarTicker() {
+  const qSeg = (S.q && S.q.segmento) || ((S.quadros.find(q => q.segmento) || {}).segmento) || "geral";
+  if (!qSeg || !sb.functions) return;
+  S.seg = qSeg;
+  await carregarTicker();
+  setInterval(carregarTicker, 30 * 60 * 1000);
+}
+async function carregarTicker() {
+  let j = null;
+  try { const r = await sb.functions.invoke("mercado-feed", { body: { segmento: S.seg } }); j = r.data; } catch {}
+  if (S.wl) S.papo = []; else try {
+    const segs = S.seg === "agro" ? ["agro", "geral"] : [S.seg, "geral"];
+    const { data: pn } = await sb.from("papo_noticias").select("id,data,segmento,titulo,fonte_nome").in("segmento", [...new Set(segs)]).order("data", { ascending: false }).order("id").limit(12);
+    if (pn && pn.length) { const ult = pn[0].data; S.papo = pn.filter(x => dias(x.data) >= -3 && (x.data === ult || pn.length < 6)); } else S.papo = [];
+  } catch { S.papo = []; }
+  if (S.papo.length) { j = j || {}; j.noticias = S.papo.map(n => ({ titulo: n.titulo, fonte: "Papo de Porteira", url: PAPO_URL + "#n" + n.id, publicado_em: n.data + "T09:00:00", papo: true })); }
+  if (!j || (!(j.cotacoes || []).length && !(j.noticias || []).length)) return;
+  S.mercado = j;
+  const ico = (t) => /soja/i.test(t) ? "🌱" : /milho/i.test(t) ? "🌽" : /boi/i.test(t) ? "🐂" : /d[oó]lar/i.test(t) ? "💵" : /caf/i.test(t) ? "☕" : "📈";
+  const varH = (v) => v == null ? "" : v > 0 ? ` <span class="up">▲ ${String(v.toFixed(2)).replace(".", ",")}%</span>` : v < 0 ? ` <span class="dn">▼ ${String(Math.abs(v).toFixed(2)).replace(".", ",")}%</span>` : ` <span class="fn">= 0%</span>`;
+  const cot = (j.cotacoes || []).map(c => `<a class="ct" href="${esc(c.url)}" target="_blank" rel="noopener" title="${esc(c.fonte || "")} · abre em nova guia">${ico(c.titulo)} ${esc(c.titulo)}: <b>R$ ${esc(c.valor)}</b>${c.unidade && c.unidade !== "R$" ? esc(c.unidade.replace("R$", "")) : ""}${varH(c.variacao)}</a>`);
+  const nts = (j.noticias || []).slice(0, 15).map(n => n.papo ? `<a href="${esc(n.url)}" target="_blank" rel="noopener" title="Papo de Porteira Notícias · abre em nova guia">🎙️ <span class="fn">Papo de Porteira:</span> ${esc(n.titulo)}</a>` : `<a href="${esc(n.url)}" target="_blank" rel="noopener" title="Abre a notícia em nova guia">📰 <span class="fn">${esc(n.fonte || "")}:</span> ${esc(n.titulo)}</a>`);
+  const itens = [...cot, ...nts].join("");
+  const el = $("#ticker");
+  el.innerHTML = `<div class="lb">📈 <span>${esc(SEG_NOME[S.seg] || "Mercado")}</span></div><div class="vp"><div class="tr" style="--dur:${Math.max(60, (cot.length + nts.length) * 9)}s">${itens}<span aria-hidden="true" style="display:inline-flex;gap:28px">${itens.replace(/<a /g, '<a tabindex="-1" ')}</span></div></div><button class="mais" type="button" id="tkMais" aria-label="Ver todas as notícias e cotações">📰 Todas</button>`;
+  el.hidden = false;
+  $("#tkMais").onclick = (e) => { e.stopPropagation(); abrirNoticias(); };
+}
+function abrirNoticias() {
+  const j = S.mercado || {}; let pn = $("#painelM");
+  if (!pn) { pn = document.createElement("div"); pn.id = "painelM"; pn.className = "painelN"; pn.setAttribute("role", "dialog"); pn.setAttribute("aria-label", "Mercado e notícias"); document.body.appendChild(pn); document.addEventListener("click", (e) => { if (!pn.hidden && !pn.contains(e.target) && e.target.id !== "tkMais") pn.hidden = true; }); document.addEventListener("keydown", (e) => { if (e.key === "Escape") pn.hidden = true; }); }
+  if (!pn.hidden && pn.dataset.on === "1") { pn.hidden = true; pn.dataset.on = "0"; return; }
+  const atual = (j.cotacoes || [])[0];
+  pn.innerHTML = `<div class="hd"><b>📈 ${esc(SEG_NOME[S.seg] || "Mercado")}</b><span class="note" style="margin:0">abre em nova guia ↗</span></div>` +
+    (j.cotacoes || []).map(c => `<a class="it" href="${esc(c.url)}" target="_blank" rel="noopener"><b>${esc(c.titulo)}: R$ ${esc(c.valor)}${c.unidade && c.unidade !== "R$" ? esc(c.unidade.replace("R$", "")) : ""}</b>${c.variacao != null ? ` <span style="color:${c.variacao >= 0 ? "var(--ok)" : "var(--bad)"}">${c.variacao >= 0 ? "▲" : "▼"} ${Math.abs(c.variacao).toFixed(2).replace(".", ",")}%</span>` : ""}<small>${esc(c.fonte || "")}</small></a>`).join("") +
+    `<div class="hd" style="margin-top:6px"><b>${S.papo && S.papo.length ? "🎙️ Papo de Porteira Notícias" : "📰 Notícias"}</b>${S.papo && S.papo.length ? `<a class="note" style="margin:0" href="${esc(PAPO_URL)}" target="_blank" rel="noopener">ver todas ↗</a>` : ""}</div>` +
+    (j.noticias || []).map(n => `<a class="it" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.titulo)}<small>${esc(n.fonte || "")}${n.publicado_em ? " · " + quando(n.publicado_em) : ""}</small></a>`).join("") +
+    (S.time && S.q ? `<div class="hd" style="gap:8px"><span class="note" style="margin:0">Segmento de ${esc(S.q.empresa)}:</span><select id="segSel" class="fsel">${Object.entries(SEG_NOME).map(([k, v]) => `<option value="${k}"${(S.q.segmento || "geral") === k ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></div>` : "") +
+    `<p class="note" style="padding:6px 8px;margin:0">Fontes: ${esc([...new Set([...(j.cotacoes || []), ...(j.noticias || [])].map(x => x.fonte).filter(Boolean))].join(", "))}. Atualiza a cada 30 minutos.${atual ? " Última atualização: " + quando(atual.atualizado_em) + "." : ""}</p>`;
+  pn.style.top = ($("#ticker").getBoundingClientRect().bottom + 6) + "px";
+  const ss = pn.querySelector("#segSel");
+  if (ss) { ss.onclick = (e) => e.stopPropagation(); ss.onchange = async (e) => {
+    const v = e.target.value; const { error } = await sb.from("cq_quadros").update({ segmento: v }).eq("empresa", S.q.empresa);
+    if (error) return toast("Não foi possível mudar: " + error.message);
+    S.quadros.filter(q => q.empresa === S.q.empresa).forEach(q => q.segmento = v); S.seg = v; pn.hidden = true; await carregarTicker(); toast("Letreiro de " + S.q.empresa + ": " + SEG_NOME[v]);
+  }; }
+  pn.hidden = false; pn.dataset.on = "1";
+}
+function ligarTempoReal() {
+  if (S.rt || !sb.channel) return;
+  const ev = (t) => (p) => {
+    const cid = t === "k" ? ((p.new || {}).id || (p.old || {}).id) : ((p.new || {}).cartao || (p.old || {}).cartao);
+    if (S.abertoId && cid === S.abertoId) {
+      if (t === "c") carregarComs(cid);
+      if (t === "a") { const k = S.cards.find(x => x.id === cid); if (k) carregarAnx(k); }
+    }
+    clearTimeout(S.rtT);
+    S.rtT = setTimeout(() => { if (!document.querySelector(".addf") && !S.arrastando) carregar(true); }, 350);
+  };
+  S.rt = sb.channel("cq-quadros-" + S.user.id)
+    .on("postgres_changes", { event: "*", schema: "public", table: "cq_cartoes" }, ev("k"))
+    .on("postgres_changes", { event: "*", schema: "public", table: "cq_comentarios" }, ev("c"))
+    .on("postgres_changes", { event: "*", schema: "public", table: "cq_anexos" }, ev("a"))
+    .subscribe();
+}
+const BUCKET = "cq-anexos";
+const tamH = (b) => b == null ? "" : b < 1024 ? b + " B" : b < 1048576 ? Math.round(b / 1024) + " KB" : (b / 1048576).toFixed(1).replace(".", ",") + " MB";
+const iconeDe = (n, t) => /pdf/i.test(t || n) ? "📕" : /sheet|excel|csv|xls/i.test(t || n) ? "📊" : /word|docx?$/i.test(t || n) ? "📝" : /zip|rar/i.test(t || n) ? "🗜️" : "📄";
+async function carregarAnx(k) {
+  const el = $("#kAx"); if (!el) return;
+  const { data, error } = await sb.from("cq_anexos").select("*").eq("cartao", k.id).order("em");
+  if (error) { el.innerHTML = `<span class="note">Não foi possível carregar os anexos.</span>`; return; }
+  const lst = data || [];
+  S.anx = S.anx || {}; S.anx[k.id] = lst.length;
+  if (!lst.length) { el.innerHTML = `<span class="note">Nenhum anexo ainda.</span>`; return; }
+  const { data: urls } = await sb.storage.from(BUCKET).createSignedUrls(lst.map(a => a.caminho), 3600);
+  const mapa = {}; for (const u of urls || []) mapa[u.path] = u.signedUrl;
+  el.innerHTML = lst.map(a => {
+    const url = mapa[a.caminho] || "#", img = /^image\//.test(a.tipo || "");
+    const pode = S.time || a.user_id === S.user.id;
+    return `<div class="a">${pode ? `<button class="x" type="button" data-ax="${a.id}" aria-label="Apagar ${esc(a.nome)}">✕</button>` : ""}<a href="${esc(url)}" target="_blank" rel="noopener" title="${esc(a.nome)} · ${esc(a.autor || "")} · ${dataHora(a.em)}">${img ? `<img src="${esc(url)}" alt="${esc(a.nome)}" loading="lazy">` : `<span class="ic">${iconeDe(a.nome, a.tipo)}</span>`}<small>${esc(a.nome)}<br>${tamH(a.tamanho)}</small></a></div>`;
+  }).join("");
+  $$("[data-ax]", el).forEach(b => b.onclick = async () => {
+    const a = lst.find(x => x.id === b.dataset.ax); if (!a) return;
+    if (!confirmaApagar(a.nome)) return;
+    const r1 = await sb.storage.from(BUCKET).remove([a.caminho]);
+    if (r1.error) return toast("Não foi possível apagar: " + r1.error.message);
+    const r2 = await sb.from("cq_anexos").delete().eq("id", a.id);
+    if (r2.error) return toast("Não foi possível apagar: " + r2.error.message);
+    await evento("apagou anexo", a.nome, k.id, k.quadro); await carregarAnx(k); carregarHist(k.id); render();
+  });
+}
+function confirmaApagar(nome) { return window.__semConfirm ? true : confirm(`Apagar o anexo "${nome}"?`); }
+async function enviarAnx(k, f, print) {
+  if (f.size > 10485760) return toast(`"${f.name}" passa de 10 MB.`);
+  const agora = new Date(), z = (n) => String(n).padStart(2, "0");
+  let nome = f.name || "arquivo";
+  if (print || /^image\.(png|jpe?g)$/i.test(nome)) { const ext = (nome.split(".").pop() || "png").toLowerCase(); nome = `print-${agora.getFullYear()}-${z(agora.getMonth() + 1)}-${z(agora.getDate())}-${z(agora.getHours())}${z(agora.getMinutes())}${z(agora.getSeconds())}.${ext}`; }
+  const seguro = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\-]+/g, "_").slice(-90);
+  const caminho = `${k.id}/${agora.getTime()}-${seguro}`;
+  toast("Enviando " + nome + "…");
+  const up = await sb.storage.from(BUCKET).upload(caminho, f, { contentType: f.type || "application/octet-stream", upsert: false });
+  if (up.error) return toast("Não foi possível enviar: " + up.error.message);
+  const { error } = await sb.from("cq_anexos").insert({ cartao: k.id, caminho, nome, tipo: f.type || null, tamanho: f.size, user_id: S.user.id, autor: meuNome() });
+  if (error) { await sb.storage.from(BUCKET).remove([caminho]); return toast("Não foi possível registrar o anexo: " + error.message); }
+  await evento("anexou", nome, k.id, k.quadro);
+  toast("Anexo incluído: " + nome); await carregarAnx(k); carregarHist(k.id); render();
+}
+async function carregarHist(id) {
+  const { data } = await sb.from("cq_eventos").select("*").eq("cartao", id).order("em", { ascending: false }).limit(30);
+  const el = $("#kH"); if (!el) return;
+  el.innerHTML = (data || []).map(e => `<span>${dataHora(e.em)} · <b>${esc(e.nome || "")}</b> ${esc(e.acao)}${e.detalhe ? ": " + esc(e.detalhe) : ""}</span>`).join("") || "<span>Sem registros.</span>";
+}
+
+/* ---------- membros (só equipe Vital) ---------- */
+async function abrirMembros() {
+  const d = $("#dlgM");
+  let pessoas = [];
+  if (S.perfil.papel === "admin") { const { data } = await sb.from("perfis").select("user_id, nome, login, papel").order("nome"); pessoas = (data || []).filter(p => !S.mem.some(m => m.user_id === p.user_id)); }
+  d.innerHTML = `<form method="dialog" class="dlg" style="grid-template-columns:minmax(0,1fr)">
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.1rem">Membros · ${esc(S.q.nome)}</h2><button class="btn ghost sm" value="x" aria-label="Fechar">✕</button></div>
+    <p class="note">Só os membros do cliente veem este quadro. A equipe Vital vê todos os quadros.</p>
+    <div class="ck">${S.mem.map(m => `<label><span>${esc(m.nome)}</span><button class="x" type="button" data-u="${m.user_id}" aria-label="Remover ${esc(m.nome)}">Remover</button></label>`).join("")}</div>
+    ${S.perfil.papel === "admin" ? `<div class="row" style="flex-wrap:nowrap"><select id="mP" aria-label="Pessoa"><option value="">Escolha um acesso…</option>${pessoas.map(p => `<option value="${p.user_id}">${esc(p.nome || p.login)}${p.login ? " (" + esc(p.login) + ")" : ""}</option>`).join("")}</select><button class="btn primary sm" type="button" id="mA">Incluir</button></div>
+    <p class="note">Quem não aparece na lista ainda não tem acesso ao portal: crie em Área do cliente › Acessos.</p>` : `<p class="note">Para incluir pessoas, peça a um administrador da Vital.</p>`}
+  </form>`;
+  d.showModal();
+  $$("[data-u]", d).forEach(b => b.onclick = async () => {
+    const { error } = await sb.from("cq_membros").delete().eq("quadro", S.q.id).eq("user_id", b.dataset.u);
+    if (error) return toast(error.message);
+    S.mem = S.mem.filter(m => m.user_id !== b.dataset.u); abrirMembros(); render();
+  });
+  if ($("#mA")) $("#mA").onclick = async () => {
+    const uid = $("#mP").value; if (!uid) return toast("Escolha a pessoa.");
+    const p = pessoas.find(x => x.user_id === uid);
+    const { error } = await sb.from("cq_membros").insert({ quadro: S.q.id, user_id: uid, nome: p.nome || p.login });
+    if (error) return toast(error.message);
+    S.mem.push({ quadro: S.q.id, user_id: uid, nome: p.nome || p.login }); S.mem.sort((a, b) => a.nome.localeCompare(b.nome)); abrirMembros(); render();
+  };
+}
+$("#dlg").addEventListener("close", () => { S.abertoId = null; });
+iniciar().catch(e => falha("Erro: " + e.message));
+})();
+</script>
+</body>
+</html>
