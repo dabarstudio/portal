@@ -236,7 +236,7 @@ function abas() {
   if (S.papel === "cliente") t.push(["inicio", "Início"], ["guias", "Guias"], ["meus", "Documentos"], ["msgs", "Mensagens"]);
   if (S.papel === "admin" || S.papel === "equipe") t.push(["docs", "Documentos"], ["guias", "Guias"], ["obrig", "Obrigações"], ["quadro", "Tarefas"], ["msgs", "Mensagens"], ["clientes", "Clientes"], ["lista", "Lista do mês"]);
   if (S.papel === "admin") t.push(["acessos", "Acessos"], ["marca", "Escritório"]);
-  if (S.vital) t.push(["vital", "Escritórios (Dabar)"]);
+  if (S.vital && !S.suporte) t.push(["vital", "Escritórios (Dabar)"]);
   return t;
 }
 function montarTabs() {
@@ -455,23 +455,48 @@ async function vMarca(c) {
     <label for="mCor">Cor principal</label><input id="mCor" type="color" value="${esc(e.cor)}" style="height:44px;padding:4px">
     <label for="mPrazo">Dia do prazo de envio (mês seguinte)</label><input id="mPrazo" type="number" min="1" max="28" value="${e.prazo_dia}">
     <p class="note">Link para os seus clientes entrarem: <b>${esc(location.origin + location.pathname)}?e=${esc(e.slug)}</b></p>
-    <button class="btn" type="submit">Salvar</button></form></div>`;
+    <button class="btn" type="submit">Salvar</button></form></div>
+    ${S.suporte ? "" : `<div class="card" style="max-width:560px"><h2>Suporte Dabar</h2><p class="note">A equipe da Dabar só consegue ver o seu ambiente quando você autoriza, por tempo limitado. Cada entrada fica registrada aqui.</p>
+    <p id="supSt"></p><div class="row"><button class="btn sm" data-sup="24" type="button">Autorizar por 24 horas</button><button class="btn sec sm" data-sup="168" type="button">Autorizar por 7 dias</button><button class="btn red sm" data-sup="0" type="button">Revogar</button></div>
+    <h3 style="margin-top:14px">Registro</h3><ul class="lst" id="supLog"></ul></div>`}`;
   $("#fMarca").onsubmit = async (ev) => { ev.preventDefault();
     const up = { nome: $("#mNome").value.trim(), cor: $("#mCor").value, prazo_dia: Math.min(28, Math.max(1, +$("#mPrazo").value || 10)) };
     const { error } = await sb.from("wl_escritorios").update(up).eq("id", e.id); if (error) return aviso("Não foi possível salvar.", false);
     Object.assign(S.esc, up); aplicarMarca(S.esc); aviso("Dados salvos."); };
+  if (S.suporte) return;
+  const sup = async () => {
+    const [{ data: e2 }, { data: lg }] = await Promise.all([sb.from("wl_escritorios").select("suporte_ate").eq("id", e.id).single(), sb.from("wl_suporte_log").select("*").eq("escritorio", e.id).order("criado_em", { ascending: false }).limit(20)]);
+    const ativo = e2 && e2.suporte_ate && new Date(e2.suporte_ate) > new Date();
+    $("#supSt").innerHTML = ativo ? `<span class="chip st-aprovado">Autorizado até ${new Date(e2.suporte_ate).toLocaleString("pt-BR")}</span>` : '<span class="chip st-pendente">Sem autorização · a Dabar não acessa o seu ambiente</span>';
+    const AC = { autorizou: "Autorização concedida", revogou: "Autorização revogada", entrou: "Dabar entrou no ambiente" };
+    $("#supLog").innerHTML = (lg || []).map((x) => `<li style="cursor:default">${esc(AC[x.acao] || (x.acao.startsWith("acessos") ? "Dabar mexeu em acessos" : x.acao))} <span class="note">· ${new Date(x.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}${x.ate ? " · até " + new Date(x.ate).toLocaleDateString("pt-BR") : ""}</span></li>`).join("") || '<li class="note">Nenhum registro.</li>';
+  };
+  sup();
+  c.onclick = async (ev) => { const b = ev.target.closest("[data-sup]"); if (!b) return; const { error } = await sb.rpc("wl_suporte", { p_esc: e.id, p_horas: +b.dataset.sup }); aviso(error ? "Não foi possível alterar." : (+b.dataset.sup ? "Suporte autorizado." : "Suporte revogado."), !error); sup(); };
+}
+
+function bannerSuporte() {
+  let b = $("#bSup"); if (!S.suporte) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement("div"); b.id = "bSup"; b.setAttribute("role", "status"); b.style.cssText = "background:#1F2A33;color:#fff;font-size:.85rem;padding:8px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap"; $("#vApp").prepend(b); }
+  b.innerHTML = `🛟 <b>Modo suporte Dabar</b> · você está no ambiente de ${esc(S.esc.nome)} com autorização até ${new Date(S.esc.suporte_ate).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} <button class="btn sm" style="background:#fff;color:#1F2A33" id="bSupX" type="button">Sair do modo suporte</button>`;
+  $("#bSupX").onclick = () => { S.suporte = false; S.esc = null; S.papel = null; aplicarMarca(DABAR); bannerSuporte(); S.tab = "vital"; montarTabs(); };
 }
 
 /* ---------- Dabar: escritórios licenciados ---------- */
 async function vVital(c) {
   const { data: es } = await sb.from("wl_escritorios").select("*").order("nome");
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><div><h2>Escritórios licenciados</h2><p class="note" style="margin:0">Área da Dabar. Aqui você cria o escritório e o primeiro administrador dele. Os dados dos clientes de cada escritório ficam só com o escritório.</p></div><button class="btn" id="vNovo" type="button">+ Novo escritório</button></div>
-    <div class="card tw"><table><thead><tr><th>Escritório</th><th class="hm">Link</th><th>Situação</th><th></th></tr></thead><tbody>
-    ${(es || []).map((x) => `<tr><td><b>${esc(x.nome)}</b></td><td class="hm note">?e=${esc(x.slug)}</td><td>${x.ativo ? '<span class="chip st-aprovado">Ativo</span>' : '<span class="chip st-pendente">Suspenso</span>'}</td><td style="text-align:right"><button class="btn sec sm" data-ac="${x.id}" type="button">Acessos</button></td></tr>`).join("")}</tbody></table></div><div id="vAc"></div>`;
+    <div class="card tw"><table><thead><tr><th>Escritório</th><th class="hm">Link</th><th>Suporte Dabar</th><th></th></tr></thead><tbody>
+    ${(es || []).map((x) => { const sup = x.suporte_ate && new Date(x.suporte_ate) > new Date(); return `<tr><td><b>${esc(x.nome)}</b>${x.ativo ? "" : ' <span class="chip st-pendente">Suspenso</span>'}</td><td class="hm note">?e=${esc(x.slug)}</td>
+      <td>${sup ? `<span class="chip st-aprovado">Autorizado até ${new Date(x.suporte_ate).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>` : '<span class="chip st-pendente">Sem autorização</span>'}</td>
+      <td style="text-align:right;white-space:nowrap">${sup ? `<button class="btn sm" data-entra="${x.id}" type="button">Entrar no ambiente</button> ` : ""}<button class="btn sec sm" data-ac="${x.id}" type="button">Acessos</button></td></tr>`; }).join("")}</tbody></table></div>
+    <p class="note">A Dabar só entra no ambiente de um escritório quando o administrador dele autoriza o suporte (em <b>Escritório → Suporte Dabar</b>). Sem autorização, você só consegue criar o primeiro administrador. Cada entrada fica registrada para o escritório ver.</p><div id="vAc"></div>`;
   c.onclick = async (e) => {
     if (e.target.id === "vNovo") { const r = await dialogo("Novo escritório", [{ k: "nome", rot: "Nome do escritório", req: true }, { k: "slug", rot: "Apelido no link (letras minúsculas e hífen)", req: true }, { k: "cor", rot: "Cor (ex.: #4F5D33)", v: "#4F5D33" }]); if (!r) return;
-      const { error } = await sb.from("wl_escritorios").insert({ nome: r.nome, slug: r.slug.toLowerCase(), cor: /^#[0-9a-fA-F]{6}$/.test(r.cor) ? r.cor : "#4F5D33" }); aviso(error ? "Não foi possível criar (o apelido já existe?)." : "Escritório criado.", !error); return render(); }
-    const ac = e.target.closest("[data-ac]"); if (ac) { const x = es.find((y) => y.id === ac.dataset.ac); const box = $("#vAc"); box.innerHTML = ""; const div = document.createElement("div"); box.appendChild(div); c.onclick = null; await vAcessos(div, x.id, x.nome); const back = document.createElement("button"); back.className = "btn ghost sm"; back.textContent = "← Voltar aos escritórios"; back.onclick = () => render(); box.prepend(back); }
+      const { error } = await sb.from("wl_escritorios").insert({ nome: r.nome, slug: r.slug.toLowerCase(), cor: /^#[0-9a-fA-F]{6}$/.test(r.cor) ? r.cor : "#4F5D33", suporte_ate: new Date(Date.now() + 7 * 864e5).toISOString() }); aviso(error ? "Não foi possível criar (o apelido já existe?)." : "Escritório criado.", !error); return render(); }
+    const en = e.target.closest("[data-entra]"); if (en) { const x = es.find((y) => y.id === en.dataset.entra); const { error } = await sb.rpc("wl_suporte_entrar", { p_esc: x.id }); if (error) return aviso("Sem autorização de suporte para este escritório.", false);
+      S.esc = x; S.papel = "admin"; S.suporte = true; aplicarMarca(x); $(".sinoW").classList.add("hide"); bannerSuporte(); S.tab = null; return montarTabs(); }
+    const ac = e.target.closest("[data-ac]"); if (ac) { const x = es.find((y) => y.id === ac.dataset.ac); const box = $("#vAc"); box.innerHTML = ""; const div = document.createElement("div"); box.appendChild(div); await vAcessos(div, x.id, x.nome); box.scrollIntoView({ behavior: "smooth", block: "start" }); }
   };
 }
 
