@@ -6,6 +6,7 @@
 <title>Portal do escritório</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#4F5D33">
+<link rel="icon" href="dabar-icon.png"><link rel="apple-touch-icon" href="dabar-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -149,7 +150,7 @@ footer.by{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:.72
   <nav class="tabs" aria-label="Seções"><div class="wrap" id="tabs"></div></nav>
   <main class="wrap" id="conteudo"></main>
 </section>
-<footer class="by">Tecnologia Dabar</footer>
+<footer class="by"><img src="dabar-icon.png" alt="" width="14" height="14" style="vertical-align:-2px;margin-right:4px">Tecnologia Dabar</footer>
 
 <dialog id="dlg"><form method="dialog" id="dlgF"></form></dialog>
 
@@ -172,7 +173,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch { /* ok */ } }
 const S = { user: null, vital: false, membros: [], esc: null, papel: null, tab: null, comp: compAnterior(), clientes: [], abre: null };
 
 /* ---------- marca ---------- */
-const DABAR = { nome: "Dabar", logo_url: null, cor: "#24323F" };
+const DABAR = { nome: "Dabar", logo_url: "dabar-logo.png", cor: "#1F2A33" };
 function slugAtual() { const q = new URLSearchParams(location.search).get("e"); return q ? q.toLowerCase() : ""; }
 function aplicarMarca(m) {
   if (!m) return;
@@ -182,7 +183,7 @@ function aplicarMarca(m) {
   document.title = (m.nome || "Portal") + " · Portal";
   for (const [img, nm] of [[$("#lgLogo"), $("#lgNome")], [$("#hLogo"), $("#hNome")]]) {
     if (m.logo_url) { img.src = m.logo_url; img.alt = m.nome; img.classList.remove("hide"); } else img.classList.add("hide");
-    nm.textContent = m === DABAR ? (img.id === "lgLogo" ? "Plataforma Dabar" : "Dabar · Plataforma") : (m.logo_url && img.id === "lgLogo" ? "Portal do cliente" : m.nome);
+    nm.textContent = m === DABAR ? (img.id === "lgLogo" ? "Acesso à plataforma" : "Área da Dabar") : (m.logo_url && img.id === "lgLogo" ? "Portal do cliente" : m.nome);
   }
 }
 function clarear(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; const f = (x) => Math.round(x + (255 - x) * 0.88); return `rgb(${f(r)},${f(g)},${f(b)})`; }
