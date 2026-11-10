@@ -248,7 +248,7 @@ function montarTabs() {
   $("#tabs").innerHTML = t.map(([k, n]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === S.tab}">${n}</button>`).join("");
   render();
 }
-$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; S.tab = b.dataset.t; S.abre = null; montarTabs(); });
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
 function irPara(tab, extra) { S.tab = tab; S.abre = (extra && extra.cliente) || null; if (extra && extra.comp) S.comp = extra.comp; montarTabs(); }
 function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
 
@@ -769,8 +769,11 @@ async function vObrig(c) {
     }
     const tar = e.target.closest("[data-tar]"); if (tar) { const x = en.find((y) => String(y.id) === tar.dataset.tar); const o = ob.find((y) => y.id === x.obrigacao);
       const { data: vv } = await sb.from("wl_obrig_vinculo").select("responsavel").eq("obrigacao", o.id).eq("cliente", x.cliente).maybeSingle();
-      const { error } = await sb.from("wl_tarefas").insert({ escritorio: S.esc.id, cliente: x.cliente, titulo: `${o.nome} · ${nomeCli(x.cliente)} (${compBR(x.competencia)})`, prazo: x.meta, entrega: x.id, responsavel: (vv && vv.responsavel) || null });
-      aviso(error ? "Não foi possível criar a tarefa." : "Tarefa criada no quadro.", !error); }
+      const { data: qg } = await sb.from("cq_quadros").select("id").eq("wl_escritorio", S.esc.id).eq("geral", true).maybeSingle();
+      const { data: col } = qg ? await sb.from("cq_colunas").select("id").eq("quadro", qg.id).eq("nome", "A fazer").maybeSingle() : { data: null };
+      if (!qg || !col) return aviso("Quadro de tarefas não encontrado.", false);
+      const { error } = await sb.from("cq_cartoes").insert({ quadro: qg.id, coluna: col.id, titulo: `${o.nome} · ${nomeCli(x.cliente)} (${compBR(x.competencia)})`, descricao: `Obrigação ${o.nome} da competência ${compBR(x.competencia)}. Vence em ${dataBR(x.vencimento)}.`, prazo: x.meta, responsavel: (vv && vv.responsavel) || null, ordem: Date.now() / 1000 });
+      aviso(error ? "Não foi possível criar a tarefa." : "Tarefa criada no quadro geral.", !error); }
   };
 }
 async function vObrigCad(c, topo) {
