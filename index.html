@@ -10,7 +10,8 @@
 <meta property="og:description" content="Portal para escritórios de contabilidade e seus clientes: documentos, guias, obrigações e tarefas.">
 <meta property="og:image" content="https://dabarstudio.github.io/portal/dabar-og.jpg"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#4F5D33">
-<link rel="icon" href="dabar-icon.png"><link rel="apple-touch-icon" href="dabar-icon.png">
+<link rel="icon" href="dabar-icon.png"><link rel="apple-touch-icon" id="lnkApple" href="dabar-icon.png"><link rel="manifest" id="lnkMan" href="m/dabar.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" id="mtApp" content="Dabar">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -148,6 +149,7 @@ footer.by{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:.72
     <div class="nm"><span id="hNome"></span><small id="hUser"></small></div>
     
     <select id="hEsc" class="hide" style="width:auto" aria-label="Escritório"></select>
+    <button class="btn ghost sm hide" id="bInst" type="button" title="Instalar o app no celular" aria-label="Instalar o app">📲</button>
     <div class="sinoW"><button class="btn ghost sm" id="bSino" type="button" aria-label="Avisos" aria-expanded="false">🔔<span id="sinoN" class="sinoN hide">0</span></button><div id="sinoP" class="sinoP hide" role="dialog" aria-label="Avisos"></div></div>
     <button class="btn ghost sm" id="bSair" type="button">Sair</button>
   </div></header>
@@ -181,6 +183,7 @@ const DABAR = { nome: "Dabar", logo_url: "dabar-logo.png", cor: "#1F2A33" };
 function slugAtual() { const q = new URLSearchParams(location.search).get("e"); return q ? q.toLowerCase() : ""; }
 function aplicarMarca(m) {
   if (!m) return;
+  try { marcaApp(m, m === DABAR ? null : (m.slug || slugAtual())); } catch { /* ok */ }
   document.documentElement.style.setProperty("--cor", m.cor || "#4F5D33");
   document.documentElement.style.setProperty("--cor-cl", clarear(m.cor || "#4F5D33"));
   $('meta[name="theme-color"]').content = m.cor || "#4F5D33";
@@ -217,7 +220,7 @@ async function iniciar() {
   S.user = session.user;
   if (S.user.user_metadata && S.user.user_metadata.trocar_senha) { mostrar("vTrocar"); return; }
   const [{ data: mem }, { data: vital }] = await Promise.all([
-    sb.from("wl_membros").select("escritorio, papel, nome, wl_escritorios(id, slug, nome, logo_url, cor, prazo_dia)").eq("user_id", S.user.id),
+    sb.from("wl_membros").select("escritorio, papel, nome, wl_escritorios(id, slug, nome, logo_url, cor, prazo_dia, pix_chave, pix_nome, pix_cidade)").eq("user_id", S.user.id),
     sb.rpc("wl_sou_vital"),
   ]);
   S.membros = (mem || []).filter((m) => m.wl_escritorios); S.vital = !!vital;
@@ -238,7 +241,7 @@ function escolherEsc(m) { S.esc = m.wl_escritorios; S.papel = m.papel; lsSet("da
 function abas() {
   const t = [];
   if (S.papel === "cliente") t.push(["inicio", "Início"], ["guias", "Guias"], ["meus", "Documentos"], ["msgs", "Mensagens"]);
-  if (S.papel === "admin" || S.papel === "equipe") t.push(["docs", "Documentos"], ["guias", "Guias"], ["obrig", "Obrigações"], ["quadro", "Tarefas"], ["msgs", "Mensagens"], ["clientes", "Clientes"], ["lista", "Lista do mês"]);
+  if (S.papel === "admin" || S.papel === "equipe") t.push(["painel", "Painel"], ["docs", "Documentos"], ["guias", "Guias e honorários"], ["obrig", "Obrigações"], ["proc", "Processos"], ["quadro", "Tarefas"], ["msgs", "Mensagens"], ["clientes", "Clientes"], ["lista", "Lista do mês"]);
   if (S.papel === "admin") t.push(["acessos", "Acessos"], ["marca", "Escritório"]);
   if (S.vital && !S.suporte) t.push(["vital", "Escritórios (Dabar)"]);
   return t;
@@ -250,7 +253,7 @@ function montarTabs() {
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
 function irPara(tab, extra) { S.tab = tab; S.abre = (extra && extra.cliente) || null; if (extra && extra.comp) S.comp = extra.comp; montarTabs(); }
-function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
+function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, painel: vPainel, proc: vProc, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
 
 /* ---------- diálogo simples ---------- */
 function dialogo(titulo, campos, okTxt = "Salvar") {
@@ -392,8 +395,9 @@ async function vClientes(c) {
   c.onclick = async (e) => {
     if (e.target.id === "cNovo") { const r = await dialogo("Novo cliente", [{ k: "nome", rot: "Nome / razão social", req: true }, { k: "documento", rot: "CPF ou CNPJ (opcional)" }]); if (!r || !r.nome) return;
       const { error } = await sb.from("wl_clientes").insert({ escritorio: S.esc.id, nome: r.nome, documento: r.documento || null }); aviso(error ? "Não foi possível salvar." : "Cliente cadastrado.", !error); return render(); }
-    const ed = e.target.closest("[data-ed]"); if (ed) { const x = cls.find((y) => y.id === ed.dataset.ed); const r = await dialogo("Editar cliente", [{ k: "nome", rot: "Nome / razão social", v: x.nome, req: true }, { k: "documento", rot: "CPF ou CNPJ", v: x.documento }]); if (!r) return;
-      await sb.from("wl_clientes").update({ nome: r.nome, documento: r.documento || null }).eq("id", x.id); return render(); }
+    const ed = e.target.closest("[data-ed]"); if (ed) { const x = cls.find((y) => y.id === ed.dataset.ed); const r = await dialogo("Editar cliente", [{ k: "nome", rot: "Nome / razão social", v: x.nome, req: true }, { k: "documento", rot: "CPF ou CNPJ", v: x.documento }, { k: "honorario", rot: "Honorário mensal (R$)", tipo: "number", v: x.honorario == null ? "" : String(x.honorario) },
+        { k: "departamento", rot: "Departamento principal", tipo: "select", v: x.departamento || "", ops: [["", "—"], ["Fiscal", "Fiscal"], ["Contábil", "Contábil"], ["Pessoal", "Pessoal"], ["Legal", "Legal"]] }]); if (!r) return;
+      await sb.from("wl_clientes").update({ nome: r.nome, documento: r.documento || null, honorario: r.honorario === "" ? null : +r.honorario, departamento: r.departamento || null }).eq("id", x.id); return render(); }
     const at = e.target.closest("[data-at]"); if (at) { const x = cls.find((y) => y.id === at.dataset.at); await sb.from("wl_clientes").update({ ativo: !x.ativo }).eq("id", x.id); return render(); }
   };
 }
@@ -458,13 +462,17 @@ async function vMarca(c) {
     <label for="mNome">Nome</label><input id="mNome" value="${esc(e.nome)}" required>
     <label for="mCor">Cor principal</label><input id="mCor" type="color" value="${esc(e.cor)}" style="height:44px;padding:4px">
     <label for="mPrazo">Dia do prazo de envio (mês seguinte)</label><input id="mPrazo" type="number" min="1" max="28" value="${e.prazo_dia}">
+    <h3 style="margin-top:16px">Pix para honorários</h3><p class="note" style="margin:2px 0 0">Usado para gerar o Pix copia e cola dos honorários.</p>
+    <label for="mPixC">Chave Pix (CNPJ, e-mail, telefone ou chave aleatória)</label><input id="mPixC" value="${esc(e.pix_chave || "")}">
+    <label for="mPixN">Nome do recebedor</label><input id="mPixN" value="${esc(e.pix_nome || e.nome)}" maxlength="25">
+    <label for="mPixCi">Cidade</label><input id="mPixCi" value="${esc(e.pix_cidade || "")}" maxlength="15">
     <p class="note">Link para os seus clientes entrarem: <b>${esc(location.origin + location.pathname)}?e=${esc(e.slug)}</b></p>
     <button class="btn" type="submit">Salvar</button></form></div>
     ${S.suporte ? "" : `<div class="card" style="max-width:560px"><h2>Suporte Dabar</h2><p class="note">A equipe da Dabar só consegue ver o seu ambiente quando você autoriza, por tempo limitado. Cada entrada fica registrada aqui.</p>
     <p id="supSt"></p><div class="row"><button class="btn sm" data-sup="24" type="button">Autorizar por 24 horas</button><button class="btn sec sm" data-sup="168" type="button">Autorizar por 7 dias</button><button class="btn red sm" data-sup="0" type="button">Revogar</button></div>
     <h3 style="margin-top:14px">Registro</h3><ul class="lst" id="supLog"></ul></div>`}`;
   $("#fMarca").onsubmit = async (ev) => { ev.preventDefault();
-    const up = { nome: $("#mNome").value.trim(), cor: $("#mCor").value, prazo_dia: Math.min(28, Math.max(1, +$("#mPrazo").value || 10)) };
+    const up = { nome: $("#mNome").value.trim(), cor: $("#mCor").value, prazo_dia: Math.min(28, Math.max(1, +$("#mPrazo").value || 10)), pix_chave: $("#mPixC").value.trim() || null, pix_nome: $("#mPixN").value.trim() || null, pix_cidade: $("#mPixCi").value.trim() || null };
     const { error } = await sb.from("wl_escritorios").update(up).eq("id", e.id); if (error) return aviso("Não foi possível salvar.", false);
     Object.assign(S.esc, up); aplicarMarca(S.esc); aviso("Dados salvos."); };
   if (S.suporte) return;
@@ -571,6 +579,7 @@ async function vInicio(c) {
     sb.from("wl_mensagens").select("id").in("cliente", ids).eq("do_escritorio", true).is("lida_em", null),
     sb.from("wl_comunicados").select("*").eq("escritorio", S.esc.id).order("criado_em", { ascending: false }).limit(5),
   ]);
+  const { data: procs } = await sb.from("wl_processo").select("id, nome, wl_processo_etapa(ordem, titulo, status)").in("cliente", ids).eq("status", "andamento");
   let falta = 0; const cids = (comps || []).map((x) => x.id);
   if (cids.length) { const { data: its } = await sb.from("wl_doc_item").select("status").in("comp", cids); falta = (its || []).filter((i) => i.status === "pendente" || i.status === "recusado").length; }
   const hj = hojeISO(), venc = (gs || []).filter((g) => g.vencimento < hj).length;
@@ -581,6 +590,8 @@ async function vInicio(c) {
       <button class="kpi" data-ir="msgs" style="text-align:left;cursor:pointer"><b>${(msgs || []).length}</b><span>mensagem(ns) nova(s)</span></button>
     </div>
     ${(gs || []).length ? `<div class="card"><h3>Próximos pagamentos</h3><table style="margin-top:6px"><tbody>${gs.slice(0, 4).map((g) => `<tr><td><b>${esc(g.tipo)}</b> <span class="note">${compBR(g.competencia)}</span></td><td>${dataBR(g.vencimento)}</td><td style="text-align:right">${brl(g.valor)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${(procs || []).length ? `<div class="card"><h3>Seus processos</h3>${procs.map((p) => { const es = (p.wl_processo_etapa || []).sort((a, b) => a.ordem - b.ordem), f = es.filter((x) => x.status === "feito").length, a = es.find((x) => x.status === "andamento");
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--ln)"><b>${esc(p.nome)}</b><div class="row" style="gap:8px;flex-wrap:nowrap;margin-top:4px"><div class="bar" style="flex:1"><i style="width:${es.length ? Math.round(100 * f / es.length) : 0}%"></i></div><span class="note">${f}/${es.length}</span></div>${a ? `<div class="note">Agora: ${esc(a.titulo)}</div>` : ""}</div>`; }).join("")}</div>` : ""}
     <div class="card"><h3>Comunicados do escritório</h3>${(coms || []).map((x) => `<div style="padding:10px 0;border-bottom:1px solid var(--ln)"><b>${esc(x.titulo)}</b><div class="note">${new Date(x.criado_em).toLocaleDateString("pt-BR")}</div><div style="white-space:pre-wrap;margin-top:4px">${esc(x.texto)}</div></div>`).join("") || '<p class="note">Nenhum comunicado.</p>'}</div>`;
   c.onclick = (e) => { const b = e.target.closest("[data-ir]"); if (b) irPara(b.dataset.ir); };
 }
@@ -596,22 +607,27 @@ function situacaoGuia(g) {
 async function vGuias(c) {
   if (S.papel === "cliente") return vGuiasCliente(c);
   const [cls] = await Promise.all([carregarClientes(), carregarEquipe()]);
-  const f = S.fGuia || (S.fGuia = { cli: "", sit: "abertas" });
+  const f = S.fGuia || (S.fGuia = { cli: "", sit: "abertas", cat: "" });
   let q = sb.from("wl_guias").select("*").eq("escritorio", S.esc.id).order("vencimento", { ascending: false }).limit(300);
   if (f.cli) q = q.eq("cliente", f.cli);
   const { data: gs0 } = await q; const hj = hojeISO();
-  const gs = (gs0 || []).filter((g) => f.sit === "todas" || (f.sit === "abertas" && !g.paga_em && !g.cancelada) || (f.sit === "pagas" && g.paga_em) || (f.sit === "vencidas" && !g.paga_em && !g.cancelada && g.vencimento < hj) || (f.sit === "recalculo" && g.recalculo_em && !g.paga_em));
+  const gs = (gs0 || []).filter((g) => f.sit === "todas" || (f.sit === "abertas" && !g.paga_em && !g.cancelada) || (f.sit === "pagas" && g.paga_em) || (f.sit === "vencidas" && !g.paga_em && !g.cancelada && g.vencimento < hj) || (f.sit === "recalculo" && g.recalculo_em && !g.paga_em)).filter((g) => !f.cat || g.categoria === f.cat);
+  const honAtr = (gs0 || []).filter((g) => g.categoria === "honorario" && !g.paga_em && !g.cancelada && g.vencimento < hj);
   const nomeCli = (id) => (cls.find((x) => x.id === id) || {}).nome || "—";
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><div><h2>Guias</h2><p class="note" style="margin:0">Envie os PDFs das guias: o robô lê o cliente, a competência, o vencimento e o valor. Você confere e envia.</p></div>
-    <label class="btn up" style="margin:0">📄 Enviar guias (PDF)<input type="file" id="gUp" accept="application/pdf,.pdf" multiple></label></div>
+    <div class="row"><button class="btn sec" id="gHon" type="button">💰 Lançar honorários</button><label class="btn up" style="margin:0">📄 Enviar guias (PDF)<input type="file" id="gUp" accept="application/pdf,.pdf" multiple></label></div></div>
+    ${honAtr.length ? `<div class="card" style="border-left:4px solid var(--err)"><b>Honorários em atraso: ${brl(honAtr.reduce((a, g) => a + Number(g.valor || 0), 0))}</b><div class="note">${[...new Set(honAtr.map((g) => g.cliente))].map((id) => esc(nomeCli(id))).join(" · ")}</div></div>` : ""}
     <div id="gConf"></div>
     <div class="row" style="margin-bottom:10px"><select id="gCli" style="width:auto"><option value="">Todos os clientes</option>${cls.map((x) => `<option value="${x.id}" ${x.id === f.cli ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>
+    <select id="gCat" style="width:auto"><option value="">Impostos e honorários</option><option value="imposto" ${f.cat === "imposto" ? "selected" : ""}>Só impostos</option><option value="honorario" ${f.cat === "honorario" ? "selected" : ""}>Só honorários</option></select>
     <select id="gSit" style="width:auto">${[["abertas", "A pagar"], ["vencidas", "Vencidas"], ["recalculo", "Recálculo pedido"], ["pagas", "Pagas"], ["todas", "Todas"]].map(([v, n]) => `<option value="${v}" ${v === f.sit ? "selected" : ""}>${n}</option>`).join("")}</select></div>
     <div class="card tw">${gs.length ? `<table><thead><tr><th>Cliente</th><th>Guia</th><th class="hm">Competência</th><th>Vencimento</th><th class="hm">Valor</th><th>Situação</th><th></th></tr></thead><tbody>
     ${gs.map((g) => `<tr><td><b>${esc(nomeCli(g.cliente))}</b></td><td>${esc(g.tipo)}${g.recalculo_obs ? `<div class="note">“${esc(g.recalculo_obs)}”</div>` : ""}</td><td class="hm">${compBR(g.competencia)}</td><td>${dataBR(g.vencimento)}</td><td class="hm">${brl(g.valor)}</td><td>${situacaoGuia(g)}</td>
-      <td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" data-abre="${esc(g.path)}" type="button">PDF</button>${g.comprovante_path ? ` <button class="btn sec sm" data-abre="${esc(g.comprovante_path)}" type="button">Comprovante</button>` : ""}${!g.paga_em && !g.cancelada ? ` <button class="btn ghost sm" data-cancela="${g.id}" type="button">Cancelar</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhuma guia neste filtro.</div>'}</div>`;
+      <td style="text-align:right;white-space:nowrap">${g.path ? `<button class="btn ghost sm" data-abre="${esc(g.path)}" type="button">PDF</button>` : ""}${g.comprovante_path ? ` <button class="btn sec sm" data-abre="${esc(g.comprovante_path)}" type="button">Comprovante</button>` : ""}${!g.paga_em && !g.cancelada ? ` <button class="btn ghost sm" data-cancela="${g.id}" type="button">Cancelar</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhuma guia neste filtro.</div>'}</div>`;
   $("#gCli").onchange = (e) => { f.cli = e.target.value; render(); };
   $("#gSit").onchange = (e) => { f.sit = e.target.value; render(); };
+  $("#gCat").onchange = (e) => { f.cat = e.target.value; render(); };
+  $("#gHon").onclick = lancarHonorarios;
   $("#gUp").onchange = (e) => { if (e.target.files.length) conferirGuias([...e.target.files], cls); e.target.value = ""; };
   c.onclick = async (e) => {
     const a = e.target.closest("[data-abre]"); if (a) return abrirArquivo(a.dataset.abre);
@@ -702,7 +718,7 @@ async function vGuiasCliente(c) {
   const card = (g) => `<div class="item"><div class="hd"><div><h3>${esc(g.tipo)} ${g.competencia ? `<span class="note">· ${compBR(g.competencia)}</span>` : ""}</h3>${cls.length > 1 ? `<div class="note">${esc((cls.find((x) => x.id === g.cliente) || {}).nome)}</div>` : ""}
     <div style="margin-top:4px">Vence <b>${dataBR(g.vencimento)}</b> · <b>${brl(g.valor)}</b></div></div>${situacaoGuia(g)}</div>
     ${g.pix && !g.paga_em ? `<div class="pix" style="margin-top:8px">${esc(g.pix.slice(0, 60))}…</div>` : ""}
-    <div class="row" style="margin-top:10px"><button class="btn sec sm" data-ver="${g.id}" type="button">Abrir guia</button>
+    <div class="row" style="margin-top:10px">${g.path ? `<button class="btn sec sm" data-ver="${g.id}" type="button">Abrir guia</button>` : ""}
     ${!g.paga_em ? `${g.pix ? `<button class="btn sm" data-pix="${g.id}" type="button">Copiar Pix</button>` : ""}${g.linha ? `<button class="btn ghost sm" data-lin="${g.id}" type="button">Copiar código de barras</button>` : ""}
     <label class="btn ghost sm up" style="margin:0">✅ Já paguei<input type="file" accept="image/*,application/pdf" data-pago="${g.id}"></label>
     ${g.vencimento < hj && !g.recalculo_em ? `<button class="btn red sm" data-rec="${g.id}" type="button">Pedir recálculo</button>` : ""}` : (g.comprovante_path ? `<button class="btn ghost sm" data-comp="${g.id}" type="button">Ver comprovante</button>` : "")}</div></div>`;
@@ -894,7 +910,7 @@ async function vMsgs(c) {
   const cli = cls.find((x) => x.id === S.abre) || (eq ? null : cls[0]);
   let naoLidas = [];
   if (eq) { const { data } = await sb.from("wl_mensagens").select("cliente").eq("escritorio", S.esc.id).eq("do_escritorio", false).is("lida_em", null); naoLidas = data || []; }
-  const lista = eq ? `<div class="card" style="padding:10px 14px"><div class="row sb"><h3>Clientes</h3><button class="btn ghost sm" id="mCom" type="button">📣 Comunicado</button></div><ul class="lst">${cls.map((x) => { const n = naoLidas.filter((m) => m.cliente === x.id).length; return `<li data-cli="${x.id}" class="${cli && cli.id === x.id ? "on" : ""}">${esc(x.nome)} ${n ? `<span class="chip st-enviado">${n}</span>` : ""}</li>`; }).join("")}</ul></div>` : "";
+  const lista = eq ? `<div class="card" style="padding:10px 14px"><div class="row sb"><h3>Clientes</h3><button class="btn ghost sm" id="mCom" type="button">📣 Comunicado</button></div><div class="row" style="margin-top:6px;gap:6px"><button class="btn ghost sm" id="mLote" type="button">✉️ Para vários</button><button class="btn ghost sm" id="mMod" type="button">Modelos</button></div><ul class="lst">${cls.map((x) => { const n = naoLidas.filter((m) => m.cliente === x.id).length; return `<li data-cli="${x.id}" class="${cli && cli.id === x.id ? "on" : ""}">${esc(x.nome)} ${n ? `<span class="chip st-enviado">${n}</span>` : ""}</li>`; }).join("")}</ul></div>` : "";
   let chat = '<div class="card empty">Escolha um cliente para ver a conversa.</div>';
   let msgs = [];
   if (cli) {
@@ -902,7 +918,7 @@ async function vMsgs(c) {
     sb.rpc("wl_msgs_lidas", { p_cli: cli.id });
     chat = `<div class="card"><h3>${eq ? esc(cli.nome) : "Conversa com " + esc(S.esc.nome)}</h3><div class="chat" id="mChat" style="margin-top:10px">${msgs.map((m) => { const eu = m.do_escritorio === eq;
       return `<div class="bal ${eu ? "eu" : "ele"}">${esc(m.texto)}${m.path ? `<div><a data-abre="${esc(m.path)}" style="color:inherit;text-decoration:underline;cursor:pointer">📎 ${esc(m.nome_arq || "arquivo")}</a></div>` : ""}<small>${esc(m.autor_nome || "")} · ${new Date(m.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}${eu && m.lida_em ? " · lida" : ""}</small></div>`; }).join("") || '<p class="note">Nenhuma mensagem ainda.</p>'}</div>
-      <form id="mForm" class="row" style="margin-top:10px;gap:6px;flex-wrap:nowrap"><label class="btn ghost sm up" style="margin:0" title="Anexar arquivo">📎<input type="file" id="mArq"></label><input id="mTxt" placeholder="Escreva sua mensagem" style="flex:1" autocomplete="off"><button class="btn" type="submit">Enviar</button></form><div class="note" id="mArqN"></div></div>`;
+      <form id="mForm" class="row" style="margin-top:10px;gap:6px;flex-wrap:nowrap">${eq ? '<button class="btn ghost sm" id="mUsar" type="button" title="Usar modelo">📋</button>' : ""}<label class="btn ghost sm up" style="margin:0" title="Anexar arquivo">📎<input type="file" id="mArq"></label><input id="mTxt" placeholder="Escreva sua mensagem" style="flex:1" autocomplete="off"><button class="btn" type="submit">Enviar</button></form><div class="note" id="mArqN"></div></div>`;
   }
   c.innerHTML = eq ? `<div style="display:grid;gap:14px;grid-template-columns:minmax(220px,300px) 1fr" class="msgGrid">${lista}<div>${chat}</div></div><style>@media(max-width:760px){.msgGrid{grid-template-columns:1fr!important}}</style>` : chat;
   const ch = $("#mChat"); if (ch) ch.scrollTop = ch.scrollHeight;
@@ -916,12 +932,247 @@ async function vMsgs(c) {
   c.onclick = async (e) => {
     const li = e.target.closest("[data-cli]"); if (li) { S.abre = li.dataset.cli; return render(); }
     const a = e.target.closest("[data-abre]"); if (a) return abrirArquivo(a.dataset.abre);
+    if (e.target.id === "mLote") return mensagemEmLote();
+    if (e.target.id === "mMod") return gerirModelosMsg();
+    if (e.target.id === "mUsar") { const { data: mods } = await sb.from("wl_msg_modelo").select("*").eq("escritorio", S.esc.id).order("titulo"); const r = await dialogo("Usar modelo", [{ k: "id", rot: "Modelo", tipo: "select", v: "", ops: (mods || []).map((m) => [String(m.id), m.titulo]) }], "Usar"); if (!r) return; const m = (mods || []).find((x) => String(x.id) === r.id); if (m) $("#mTxt").value = preencherModelo(m.texto, cli); return; }
     if (e.target.id === "mCom") { const r = await dialogo("Novo comunicado", [{ k: "cliente", rot: "Para", tipo: "select", v: "", ops: [["", "Todos os clientes"], ...cls.map((x) => [x.id, x.nome])] }, { k: "titulo", rot: "Título", req: true }, { k: "texto", rot: "Mensagem", tipo: "area" }], "Publicar"); if (!r || !r.titulo) return;
       const { error } = await sb.from("wl_comunicados").insert({ escritorio: S.esc.id, cliente: r.cliente || null, titulo: r.titulo, texto: r.texto || "" }); aviso(error ? "Não foi possível publicar." : "Comunicado publicado.", !error); }
   };
   if (canalMsg) sb.removeChannel(canalMsg);
   if (cli) canalMsg = sb.channel("msg-" + cli.id).on("postgres_changes", { event: "INSERT", schema: "public", table: "wl_mensagens", filter: "cliente=eq." + cli.id }, () => { if (S.tab === "msgs" && !$("#dlg").open && document.activeElement !== $("#mTxt")) render(); }).subscribe();
 }
+
+/* ---------- fase 3: utilidades ---------- */
+function semAcento(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+function crc16(s) { let c = 0xffff; for (let i = 0; i < s.length; i++) { c ^= s.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xffff : (c << 1) & 0xffff; } return c.toString(16).toUpperCase().padStart(4, "0"); }
+function pixCopiaCola(chave, nome, cidade, valor, txid) {
+  const f = (id, v) => id + String(v.length).padStart(2, "0") + v;
+  const mai = f("00", "br.gov.bcb.pix") + f("01", chave.trim());
+  let p = f("00", "01") + f("26", mai) + f("52", "0000") + f("53", "986") + (valor ? f("54", Number(valor).toFixed(2)) : "") + f("58", "BR")
+    + f("59", semAcento(nome).toUpperCase().slice(0, 25) || "RECEBEDOR") + f("60", semAcento(cidade).toUpperCase().slice(0, 15) || "BRASIL")
+    + f("62", f("05", (txid || "***").replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || "***")) + "6304";
+  return p + crc16(p);
+}
+/* diálogo com lista de clientes marcáveis (e campos extras) */
+function dlgClientes(titulo, campos, cls, opts = {}) {
+  return new Promise((res) => {
+    const d = $("#dlg"), f = $("#dlgF");
+    f.innerHTML = `<h2>${esc(titulo)}</h2>` + campos.map((c) => c.tipo === "info" ? `<p class="note">${esc(c.texto)}</p>` : `<label for="dc_${c.k}">${esc(c.rot)}</label>` +
+      (c.tipo === "select" ? `<select id="dc_${c.k}">${c.ops.map(([v, n]) => `<option value="${esc(v)}" ${v === c.v ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`
+        : c.tipo === "area" ? `<textarea id="dc_${c.k}" rows="4">${esc(c.v || "")}</textarea>` : `<input id="dc_${c.k}" type="${c.tipo || "text"}" value="${esc(c.v || "")}">`)).join("") +
+      `<div class="row sb" style="margin-top:14px"><b>Clientes</b><label style="margin:0;display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="dcTodos" style="width:auto" ${opts.todos ? "checked" : ""}> Todos</label></div>
+      <div style="max-height:40vh;overflow:auto;border:1px solid var(--ln);border-radius:10px;padding:4px 10px;margin-top:6px">${cls.map((x) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--ln);flex-wrap:nowrap"><label style="margin:0;flex:1;display:flex;gap:8px;align-items:center;color:var(--tx);font-weight:500"><input type="checkbox" data-dc="${x.id}" style="width:auto" ${opts.todos ? "checked" : ""}> ${esc(x.nome)}</label>${opts.valor ? `<input type="number" step="0.01" data-dv="${x.id}" value="${x.honorario ?? ""}" placeholder="Valor" style="width:120px">` : ""}</div>`).join("") || '<p class="note">Nenhum cliente ativo.</p>'}</div>
+      <p class="msg err" id="dcMsg"></p><div class="dlgft"><button class="btn ghost" value="x" formnovalidate>Cancelar</button><button class="btn" value="ok">${esc(opts.ok || "Confirmar")}</button></div>`;
+    $("#dcTodos").onchange = (e) => f.querySelectorAll("[data-dc]").forEach((x) => (x.checked = e.target.checked));
+    const fim = () => { d.removeEventListener("close", fim); if (d.returnValue !== "ok") return res(null);
+      const o = {}; campos.forEach((c) => { if (c.k) o[c.k] = $("#dc_" + c.k).value.trim(); });
+      o.ids = [...f.querySelectorAll("[data-dc]:checked")].map((x) => x.dataset.dc);
+      if (opts.valor) { o.valores = {}; o.ids.forEach((id) => { const v = f.querySelector(`[data-dv="${id}"]`).value; o.valores[id] = v === "" ? null : +v; }); }
+      res(o); };
+    d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
+  });
+}
+async function quadroGeral() {
+  const { data: qg } = await sb.from("cq_quadros").select("id").eq("wl_escritorio", S.esc.id).eq("geral", true).maybeSingle();
+  if (!qg) return null; const { data: col } = await sb.from("cq_colunas").select("id").eq("quadro", qg.id).eq("nome", "A fazer").maybeSingle();
+  return col ? { q: qg.id, col: col.id } : null;
+}
+async function tarefaEmLote() {
+  await Promise.all([carregarClientes(), carregarEquipe()]);
+  const r = await dlgClientes("Tarefa para vários clientes", [{ k: "titulo", rot: "Tarefa (ex.: Pedir informes de rendimento)" }, { k: "descricao", rot: "Detalhe (opcional)", tipo: "area" },
+    { k: "prazo", rot: "Prazo", tipo: "date" }, { k: "resp", rot: "Responsável", tipo: "select", v: "", ops: [["", "—"], ...S.equipe.map((m) => [m.user_id, m.nome])] }], S.clientes.filter((x) => x.ativo), { ok: "Criar tarefas" });
+  if (!r) return; if (!r.titulo || !r.ids.length) return aviso("Informe a tarefa e marque os clientes.", false);
+  const g = await quadroGeral(); if (!g) return aviso("Quadro de tarefas não encontrado.", false);
+  const nome = (id) => (S.clientes.find((x) => x.id === id) || {}).nome;
+  const { error } = await sb.from("cq_cartoes").insert(r.ids.map((id, i) => ({ quadro: g.q, coluna: g.col, titulo: `${r.titulo} · ${nome(id)}`, descricao: r.descricao || null, prazo: r.prazo || null, responsavel: r.resp || null, ordem: Date.now() / 1000 + i })));
+  aviso(error ? "Não foi possível criar as tarefas." : `${r.ids.length} tarefa(s) criada(s) no quadro geral.`, !error);
+}
+
+/* ---------- saúde da carteira ---------- */
+async function vPainel(c) {
+  const [cls] = await Promise.all([carregarClientes(), carregarEquipe()]);
+  const ativos = cls.filter((x) => x.ativo), ids = ativos.map((x) => x.id), hj = hojeISO();
+  const dep = S.fDep || "";
+  const [{ data: comps }, { data: gs }, { data: ents }, { data: procs }, { data: msgs }] = await Promise.all([
+    sb.from("wl_doc_comp").select("id, cliente, prazo").eq("escritorio", S.esc.id).eq("competencia", S.comp),
+    sb.from("wl_guias").select("cliente, categoria, vencimento, valor, paga_em, recalculo_em").eq("escritorio", S.esc.id).eq("cancelada", false).is("paga_em", null),
+    sb.from("wl_obrig_entrega").select("cliente, vencimento, status, wl_obrigacoes(departamento)").eq("escritorio", S.esc.id).eq("status", "aberta"),
+    sb.from("wl_processo").select("cliente, status, wl_proc_modelo(departamento)").eq("escritorio", S.esc.id).eq("status", "andamento"),
+    sb.from("wl_mensagens").select("cliente").eq("escritorio", S.esc.id).eq("do_escritorio", false).is("lida_em", null),
+  ]);
+  const cids = (comps || []).map((x) => x.id);
+  const { data: its } = cids.length ? await sb.from("wl_doc_item").select("comp, status").in("comp", cids) : { data: [] };
+  const okDep = (d) => !dep || (d || "") === dep;
+  const L = ativos.map((cl) => {
+    const cp = (comps || []).find((x) => x.cliente === cl.id), ii = cp ? (its || []).filter((i) => i.comp === cp.id) : [];
+    const falta = ii.filter((i) => i.status === "pendente" || i.status === "recusado").length, conferir = ii.filter((i) => i.status === "enviado").length;
+    const docAtr = cp && cp.prazo && cp.prazo < hj && falta;
+    const g = (gs || []).filter((x) => x.cliente === cl.id), impV = g.filter((x) => x.categoria !== "honorario" && x.vencimento < hj).length;
+    const hon = g.filter((x) => x.categoria === "honorario" && x.vencimento < hj), honV = hon.reduce((a, x) => a + Number(x.valor || 0), 0);
+    const ob = (ents || []).filter((x) => x.cliente === cl.id && okDep(x.wl_obrigacoes && x.wl_obrigacoes.departamento)), obAtr = ob.filter((x) => x.vencimento < hj).length;
+    const pr = (procs || []).filter((x) => x.cliente === cl.id && okDep(x.wl_proc_modelo && x.wl_proc_modelo.departamento)).length;
+    const ms = (msgs || []).filter((x) => x.cliente === cl.id).length;
+    const alerta = (docAtr ? 1 : 0) + impV + obAtr + (hon.length ? 1 : 0);
+    return { cl, cp, falta, conferir, docAtr, impV, hon: hon.length, honV, ob: ob.length, obAtr, pr, ms, alerta };
+  }).sort((a, b) => b.alerta - a.alerta || a.cl.nome.localeCompare(b.cl.nome));
+  const s = (f) => L.reduce((a, x) => a + f(x), 0);
+  const deps = [...new Set(["Fiscal", "Contábil", "Pessoal", "Legal", ...ativos.map((x) => x.departamento).filter(Boolean)])];
+  const cel = (n, ruim) => n ? `<span class="chip ${ruim ? "st-recusado" : "st-enviado"}">${n}</span>` : '<span class="note">—</span>';
+  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Saúde da carteira</h2><p class="note" style="margin:0">Tudo o que está pendente ou atrasado, cliente por cliente. Os mais críticos aparecem primeiro.</p></div>
+    <div class="row"><select id="pDep" style="width:auto"><option value="">Todos os departamentos</option>${deps.map((d) => `<option ${d === dep ? "selected" : ""}>${esc(d)}</option>`).join("")}</select><input id="pComp" type="month" value="${S.comp}" style="width:auto"><button class="btn sec sm" id="pLote" type="button">Tarefa para vários clientes</button></div></div>
+    <div class="kpis">
+      <div class="kpi"><b style="color:var(--err)">${L.filter((x) => x.alerta).length}</b><span>clientes com atraso</span></div>
+      <div class="kpi"><b>${s((x) => x.conferir)}</b><span>documentos para conferir</span></div>
+      <div class="kpi"><b>${s((x) => x.obAtr)}</b><span>obrigações atrasadas</span></div>
+      <div class="kpi"><b>${s((x) => x.impV)}</b><span>guias vencidas sem pagamento</span></div>
+      <div class="kpi"><b>${brl(s((x) => x.honV))}</b><span>honorários em atraso</span></div>
+      <div class="kpi"><b>${s((x) => x.pr)}</b><span>processos em andamento</span></div></div>
+    <div class="card tw">${L.length ? `<table><thead><tr><th>Cliente</th><th>Documentos (${compBR(S.comp)})</th><th>Obrigações atrasadas</th><th class="hm">Guias vencidas</th><th class="hm">Honorários</th><th class="hm">Processos</th><th class="hm">Mensagens</th></tr></thead><tbody>
+    ${L.map((x) => `<tr><td><b>${x.alerta ? "🔴 " : "🟢 "}${esc(x.cl.nome)}</b>${x.cl.departamento ? `<div class="note">${esc(x.cl.departamento)}</div>` : ""}</td>
+      <td>${x.cp ? (x.falta ? `<span class="chip ${x.docAtr ? "st-recusado" : "st-pendente"}">faltam ${x.falta}</span>` : '<span class="chip st-aprovado">completo</span>') + (x.conferir ? ` <span class="chip st-enviado">${x.conferir} p/ conferir</span>` : "") : '<span class="note">lista não aberta</span>'}</td>
+      <td>${cel(x.obAtr, true)}${x.ob - x.obAtr ? ` <span class="note">${x.ob - x.obAtr} em aberto</span>` : ""}</td><td class="hm">${cel(x.impV, true)}</td><td class="hm">${x.hon ? `<span class="chip st-recusado">${brl(x.honV)}</span>` : '<span class="note">em dia</span>'}</td><td class="hm">${cel(x.pr)}</td><td class="hm">${cel(x.ms)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Cadastre os clientes na aba <b>Clientes</b>.</div>'}</div>`;
+  $("#pDep").onchange = (e) => { S.fDep = e.target.value; render(); };
+  $("#pComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
+  $("#pLote").onclick = tarefaEmLote;
+}
+
+/* ---------- honorários ---------- */
+async function lancarHonorarios() {
+  const cls = (await carregarClientes()).filter((x) => x.ativo), e = S.esc;
+  const r = await dlgClientes("Lançar honorários", [
+    { tipo: "info", texto: e.pix_chave ? "O Pix copia e cola é gerado com a chave cadastrada em Escritório." : "Dica: cadastre a chave Pix em Escritório para o cliente pagar com Pix copia e cola." },
+    { k: "comp", rot: "Mês de referência", tipo: "month", v: hojeISO().slice(0, 7) }, { k: "venc", rot: "Vencimento", tipo: "date" }, { k: "desc", rot: "Descrição (opcional)", v: "Honorários contábeis" }],
+    cls, { valor: true, todos: true, ok: "Lançar" });
+  if (!r) return; if (!r.venc || !r.ids.length) return aviso("Informe o vencimento e marque os clientes.", false);
+  const sem = r.ids.filter((id) => !r.valores[id]); if (sem.length) return aviso("Informe o valor de todos os clientes marcados.", false);
+  const linhas = r.ids.map((id) => ({ escritorio: e.id, cliente: id, categoria: "honorario", tipo: "Honorários", descricao: r.desc || null, competencia: r.comp || null, vencimento: r.venc, valor: r.valores[id],
+    pix: e.pix_chave ? pixCopiaCola(e.pix_chave, e.pix_nome || e.nome, e.pix_cidade || "BRASIL", r.valores[id], "HON" + (r.comp || "").replace("-", "")) : null }));
+  const { error } = await sb.from("wl_guias").insert(linhas);
+  for (const id of r.ids) { const x = cls.find((y) => y.id === id); if (x && x.honorario !== r.valores[id]) await sb.from("wl_clientes").update({ honorario: r.valores[id] }).eq("id", id); }
+  aviso(error ? "Não foi possível lançar." : `${linhas.length} honorário(s) lançado(s). Os clientes foram avisados.`, !error); render();
+}
+
+/* ---------- processos ---------- */
+async function vProc(c) {
+  await Promise.all([carregarClientes(), carregarEquipe()]);
+  S.procVis = S.procVis || "lista";
+  const [{ data: ms }, { data: ps }] = await Promise.all([
+    sb.from("wl_proc_modelo").select("*, wl_proc_modelo_etapa(*)").eq("escritorio", S.esc.id).order("nome"),
+    sb.from("wl_processo").select("*, wl_processo_etapa(*)").eq("escritorio", S.esc.id).eq("status", "andamento").order("iniciado_em", { ascending: false }),
+  ]);
+  const nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "—";
+  const etapas = (p) => (p.wl_processo_etapa || []).sort((a, b) => a.ordem - b.ordem);
+  const atual = (p) => etapas(p).find((e) => e.status === "andamento") || etapas(p).find((e) => e.status === "pendente");
+  const hj = hojeISO(), fm = S.fProcMod || "";
+  const lista = (ps || []).filter((p) => !fm || String(p.modelo) === fm);
+  let corpo = "";
+  if (S.procVis === "modelos") {
+    corpo = `<div class="row sb" style="margin-bottom:10px"><p class="note" style="margin:0">Cada modelo é uma sequência de etapas. Quando a tarefa de uma etapa vai para "Concluído" no quadro, a próxima abre sozinha.</p><button class="btn" id="mdNovo" type="button">+ Modelo</button></div>
+      <div class="grid">${(ms || []).map((m) => `<div class="card" style="margin:0"><div class="row sb"><h3>${esc(m.nome)}</h3>${m.departamento ? `<span class="chip st-enviado">${esc(m.departamento)}</span>` : ""}</div>
+        <ol class="note" style="margin:8px 0 10px;padding-left:18px">${(m.wl_proc_modelo_etapa || []).sort((a, b) => a.ordem - b.ordem).map((e) => `<li>${esc(e.titulo)} <span class="note">(${e.dias}d)</span></li>`).join("")}</ol>
+        <button class="btn ghost sm" data-md="${m.id}" type="button">Editar</button></div>`).join("")}</div>`;
+  } else if (S.procVis === "quadro" && fm) {
+    const m = (ms || []).find((x) => String(x.id) === fm), cols = (m.wl_proc_modelo_etapa || []).sort((a, b) => a.ordem - b.ordem);
+    corpo = `<div class="kb" style="grid-template-columns:repeat(${cols.length},minmax(200px,1fr))">${cols.map((e, i) => { const l = lista.filter((p) => { const a = atual(p); return a && a.ordem === i + 1; });
+      return `<div class="kcol"><h3>${esc(e.titulo)}<span class="note">${l.length}</span></h3>${l.map((p) => { const a = atual(p); return `<div class="kc ${a && a.prazo && a.prazo < hj ? "atr" : ""}" data-p="${p.id}" style="cursor:pointer"><b>${esc(nomeCli(p.cliente))}</b><div class="mt">${a && a.prazo ? `<span>📅 ${dataBR(a.prazo)}</span>` : ""}${a && a.responsavel ? `<span>👤 ${esc(nomeEquipe(a.responsavel))}</span>` : ""}</div></div>`; }).join("")}</div>`; }).join("")}</div>`;
+  } else {
+    corpo = `<div class="card tw">${lista.length ? `<table><thead><tr><th>Processo</th><th>Cliente</th><th>Etapa atual</th><th class="hm">Andamento</th><th class="hm">Prazo</th></tr></thead><tbody>
+      ${lista.map((p) => { const es = etapas(p), a = atual(p), f = es.filter((e) => e.status === "feito").length; return `<tr data-p="${p.id}" style="cursor:pointer"><td><b>${esc(p.nome)}</b></td><td>${esc(nomeCli(p.cliente))}</td><td>${a ? esc(a.titulo) : "—"}${a && a.responsavel ? `<div class="note">${esc(nomeEquipe(a.responsavel))}</div>` : ""}</td>
+        <td class="hm"><div class="row" style="gap:6px;flex-wrap:nowrap"><div class="bar" style="flex:1"><i style="width:${es.length ? Math.round(100 * f / es.length) : 0}%"></i></div><span class="note">${f}/${es.length}</span></div></td><td class="hm">${a && a.prazo ? (a.prazo < hj ? `<span class="chip st-recusado">${dataBR(a.prazo)}</span>` : dataBR(a.prazo)) : "—"}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Nenhum processo em andamento. Toque em <b>Iniciar processo</b>.</div>'}</div>`;
+  }
+  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Processos</h2><p class="note" style="margin:0">Abertura de empresa, admissão, IRPF e outros fluxos em etapas, com tarefas automáticas no quadro.</p></div>
+    <div class="row"><button class="btn ${S.procVis === "lista" ? "" : "ghost"} sm" data-vis="lista" type="button">Lista</button><button class="btn ${S.procVis === "quadro" ? "" : "ghost"} sm" data-vis="quadro" type="button">Quadro por etapa</button><button class="btn ${S.procVis === "modelos" ? "" : "ghost"} sm" data-vis="modelos" type="button">Modelos</button><button class="btn sm" id="prNovo" type="button">+ Iniciar processo</button></div></div>
+    ${S.procVis !== "modelos" ? `<div class="row" style="margin-bottom:10px"><select id="prMod" style="width:auto"><option value="">${S.procVis === "quadro" ? "Escolha o processo…" : "Todos os processos"}</option>${(ms || []).map((m) => `<option value="${m.id}" ${String(m.id) === fm ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>` : ""}
+    ${S.procVis === "quadro" && !fm ? '<div class="card empty">Escolha um processo (ex.: Declaração de IRPF) para ver as declarações por etapa.</div>' : corpo}`;
+  if ($("#prMod")) $("#prMod").onchange = (e) => { S.fProcMod = e.target.value; render(); };
+  c.onclick = async (e) => {
+    const v = e.target.closest("[data-vis]"); if (v) { S.procVis = v.dataset.vis; return render(); }
+    if (e.target.id === "prNovo") {
+      const r = await dlgClientes("Iniciar processo", [{ k: "modelo", rot: "Processo", tipo: "select", v: fm || String((ms[0] || {}).id || ""), ops: (ms || []).filter((m) => m.ativo).map((m) => [String(m.id), m.nome]) }, { k: "nome", rot: "Nome (opcional, ex.: IRPF 2027)" }], S.clientes.filter((x) => x.ativo), { ok: "Iniciar" });
+      if (!r) return; if (!r.modelo || !r.ids.length) return aviso("Escolha o processo e os clientes.", false);
+      let n = 0; for (const id of r.ids) { const { error } = await sb.rpc("wl_processo_iniciar", { p_modelo: +r.modelo, p_cliente: id, p_nome: r.nome || null }); if (!error) n++; }
+      aviso(`${n} processo(s) iniciado(s). A primeira etapa já está no quadro de tarefas.`); return render();
+    }
+    if (e.target.id === "mdNovo") return editarModelo({ nome: "", wl_proc_modelo_etapa: [] });
+    const md = e.target.closest("[data-md]"); if (md) return editarModelo(ms.find((m) => String(m.id) === md.dataset.md));
+    const p = e.target.closest("[data-p]"); if (p) return verProcesso(lista.find((x) => String(x.id) === p.dataset.p), nomeCli);
+  };
+}
+function verProcesso(p, nomeCli) {
+  const d = $("#dlg"), f = $("#dlgF"), es = (p.wl_processo_etapa || []).sort((a, b) => a.ordem - b.ordem);
+  const ic = { feito: "✅", andamento: "▶️", pendente: "⏳" };
+  f.innerHTML = `<h2>${esc(p.nome)}</h2><p class="note">${esc(nomeCli(p.cliente))} · iniciado em ${new Date(p.iniciado_em).toLocaleDateString("pt-BR")}</p>
+    <ul class="lst">${es.map((e) => `<li style="cursor:default"><div class="row sb" style="flex-wrap:nowrap"><span>${ic[e.status]} ${esc(e.titulo)}${e.responsavel ? ` <span class="note">· ${esc(nomeEquipe(e.responsavel))}</span>` : ""}${e.prazo && e.status !== "feito" ? ` <span class="note">· até ${dataBR(e.prazo)}</span>` : ""}</span>${e.status === "andamento" ? `<button class="btn sm" data-conc="${e.id}" type="button">Concluir etapa</button>` : ""}</div></li>`).join("")}</ul>
+    <div class="dlgft"><button class="btn red" value="cancel" formnovalidate>Cancelar processo</button><span style="flex:1"></span><button class="btn ghost" value="x">Fechar</button></div>`;
+  f.onclick = async (e) => { const b = e.target.closest("[data-conc]"); if (!b) return; const { error } = await sb.rpc("wl_etapa_concluir", { p_etapa: +b.dataset.conc }); if (error) return aviso("Não foi possível concluir.", false); d.close("x"); aviso("Etapa concluída. A próxima já está no quadro."); render(); };
+  const fim = async () => { d.removeEventListener("close", fim); f.onclick = null; if (d.returnValue === "cancel") { if (!(await confirmar("Cancelar este processo?"))) return; await sb.from("wl_processo").update({ status: "cancelado" }).eq("id", p.id); render(); } };
+  d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
+}
+function editarModelo(m) {
+  const d = $("#dlg"), f = $("#dlgF"); let es = (m.wl_proc_modelo_etapa || []).sort((a, b) => a.ordem - b.ordem).map((e) => ({ ...e }));
+  const linha = (e, i) => `<div class="row" style="gap:6px;padding:4px 0;flex-wrap:nowrap" data-i="${i}"><span class="note" style="width:18px">${i + 1}</span><input data-k="titulo" value="${esc(e.titulo || "")}" placeholder="Etapa" style="flex:1;min-width:0"><input data-k="dias" type="number" min="0" value="${e.dias ?? 3}" title="Dias para concluir" style="width:64px">
+    <select data-k="responsavel" style="width:120px"><option value="">Resp.</option>${(S.equipe || []).map((u) => `<option value="${u.user_id}" ${u.user_id === e.responsavel ? "selected" : ""}>${esc(u.nome.split(" ")[0])}</option>`).join("")}</select><button class="btn ghost sm" data-x="${i}" type="button" aria-label="Remover etapa">✕</button></div>`;
+  const desenha = () => { $("#meL").innerHTML = es.map(linha).join(""); };
+  f.innerHTML = `<h2>${m.id ? "Editar modelo" : "Novo modelo"}</h2><label for="meN">Nome</label><input id="meN" value="${esc(m.nome)}"><label for="meD">Departamento</label><select id="meD">${["", "Fiscal", "Contábil", "Pessoal", "Legal"].map((x) => `<option ${x === (m.departamento || "") ? "selected" : ""} value="${x}">${x || "—"}</option>`).join("")}</select>
+    <label>Etapas (na ordem) · dias para concluir · responsável</label><div id="meL"></div><button class="btn ghost sm" id="meA" type="button" style="margin-top:6px">+ Etapa</button>
+    <div class="dlgft">${m.id ? '<button class="btn red" value="off" formnovalidate>Desativar</button>' : ""}<span style="flex:1"></span><button class="btn ghost" value="x" formnovalidate>Cancelar</button><button class="btn" value="ok">Salvar</button></div>`;
+  desenha();
+  f.oninput = (e) => { const r = e.target.closest("[data-i]"); if (r && e.target.dataset.k) es[+r.dataset.i][e.target.dataset.k] = e.target.dataset.k === "dias" ? +e.target.value : e.target.value; };
+  f.onchange = f.oninput;
+  f.onclick = (e) => { if (e.target.id === "meA") { es.push({ titulo: "", dias: 3 }); desenha(); } const x = e.target.closest("[data-x]"); if (x) { es.splice(+x.dataset.x, 1); desenha(); } };
+  const fim = async () => { d.removeEventListener("close", fim); f.oninput = f.onchange = f.onclick = null;
+    if (d.returnValue === "off") { await sb.from("wl_proc_modelo").update({ ativo: false }).eq("id", m.id); return render(); }
+    if (d.returnValue !== "ok") return;
+    const nome = $("#meN").value.trim(), dep = $("#meD").value || null; es = es.filter((e) => (e.titulo || "").trim());
+    if (!nome || !es.length) return aviso("Informe o nome e pelo menos uma etapa.", false);
+    let id = m.id;
+    if (id) await sb.from("wl_proc_modelo").update({ nome, departamento: dep, ativo: true }).eq("id", id);
+    else { const { data, error } = await sb.from("wl_proc_modelo").insert({ escritorio: S.esc.id, nome, departamento: dep }).select("id").single(); if (error) return aviso("Não foi possível salvar.", false); id = data.id; }
+    await sb.from("wl_proc_modelo_etapa").delete().eq("modelo", id);
+    const { error } = await sb.from("wl_proc_modelo_etapa").insert(es.map((e, i) => ({ modelo: id, ordem: i + 1, titulo: e.titulo.trim(), dias: Math.max(0, +e.dias || 0), responsavel: e.responsavel || null })));
+    aviso(error ? "Não foi possível salvar as etapas." : "Modelo salvo. Vale para os próximos processos.", !error); render(); };
+  d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
+}
+
+/* ---------- mensagens: modelos e envio em lote ---------- */
+function preencherModelo(t, cl) { const ant = compAnterior(); return t.replace(/\{cliente\}/g, cl ? cl.nome : "").replace(/\{mes\}/g, compBR(ant)).replace(/\{prazo\}/g, String(S.esc.prazo_dia || 10).padStart(2, "0") + "/" + hojeISO().slice(5, 7)); }
+async function mensagemEmLote() {
+  const cls = (await carregarClientes()).filter((x) => x.ativo);
+  const { data: mods } = await sb.from("wl_msg_modelo").select("*").eq("escritorio", S.esc.id).order("titulo");
+  const r = await dlgClientes("Mensagem para vários clientes", [{ k: "mod", rot: "Modelo", tipo: "select", v: "", ops: [["", "— escrever do zero —"], ...(mods || []).map((m) => [String(m.id), m.titulo])] },
+    { k: "texto", rot: "Mensagem ({cliente}, {mes} e {prazo} são preenchidos sozinhos)", tipo: "area" }], cls, { ok: "Enviar" });
+  if (!r) return; const base = r.texto || ((mods || []).find((m) => String(m.id) === r.mod) || {}).texto || "";
+  if (!base || !r.ids.length) return aviso("Escreva a mensagem e marque os clientes.", false);
+  const me = S.membros.find((m) => m.escritorio === S.esc.id);
+  const { error } = await sb.from("wl_mensagens").insert(r.ids.map((id) => ({ escritorio: S.esc.id, cliente: id, autor_nome: (me && me.nome) || "", do_escritorio: true, texto: preencherModelo(base, cls.find((x) => x.id === id)) })));
+  aviso(error ? "Não foi possível enviar." : `Mensagem enviada para ${r.ids.length} cliente(s).`, !error); render();
+}
+async function gerirModelosMsg() {
+  const { data: mods } = await sb.from("wl_msg_modelo").select("*").eq("escritorio", S.esc.id).order("titulo");
+  const r = await dialogo("Modelos de mensagem", [{ k: "id", rot: "Modelo", tipo: "select", v: "", ops: [["", "+ Novo modelo"], ...(mods || []).map((m) => [String(m.id), m.titulo])] }], "Abrir");
+  if (!r) return; const m = (mods || []).find((x) => String(x.id) === r.id) || {};
+  const e = await dialogo(m.id ? "Editar modelo" : "Novo modelo", [{ k: "titulo", rot: "Título", v: m.titulo, req: true }, { k: "texto", rot: "Texto ({cliente}, {mes}, {prazo})", tipo: "area", v: m.texto }], "Salvar");
+  if (!e || !e.titulo || !e.texto) return;
+  const { error } = m.id ? await sb.from("wl_msg_modelo").update({ titulo: e.titulo, texto: e.texto }).eq("id", m.id) : await sb.from("wl_msg_modelo").insert({ escritorio: S.esc.id, titulo: e.titulo, texto: e.texto });
+  aviso(error ? "Não foi possível salvar." : "Modelo salvo.", !error);
+}
+
+/* ---------- app instalável com a marca do escritório ---------- */
+let promptInstalar = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); promptInstalar = e; const b = $("#bInst"); if (b) b.classList.remove("hide"); });
+function marcaApp(m, slug) {
+  const set = (sel, attr, v) => { let el = document.querySelector(sel); if (el) el.setAttribute(attr, v); };
+  if (slug) set("#lnkMan", "href", "m/" + slug + ".webmanifest"); else set("#lnkMan", "href", "m/dabar.webmanifest");
+  set("#lnkApple", "href", slug ? "m/" + slug + "-180.png" : "dabar-icon.png");
+  set("#mtApp", "content", m && m.nome ? m.nome.split(" ")[0] : "Dabar");
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+  const b = $("#bInst"); if (b && ios) b.classList.remove("hide");
+}
+$("#bInst") && $("#bInst").addEventListener("click", async () => {
+  if (promptInstalar) { promptInstalar.prompt(); await promptInstalar.userChoice.catch(() => {}); promptInstalar = null; $("#bInst").classList.add("hide"); return; }
+  await dialogo("Instalar o app", [{ tipo: "info", texto: "No iPhone: toque no botão Compartilhar (quadrado com seta) e depois em \"Adicionar à Tela de Início\". O app aparece com a logo do escritório." }], "Entendi");
+});
+try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {}); } catch { /* ok */ }
 
 /* ---------- início ---------- */
 (async () => { const slug = slugAtual(); let mk = null; if (slug) { const { data } = await sb.rpc("wl_marca", { p_slug: slug }); mk = data && data[0]; } aplicarMarca(mk || DABAR); iniciar(); })();
