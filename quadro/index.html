@@ -412,12 +412,12 @@ async function iniciar() {
   const { data: mem } = await sb.from("wl_membros").select("papel, nome, wl_escritorios(id, slug, nome, logo_url, cor)").eq("user_id", S.user.id);
   let m = (mem || []).find(x => x.wl_escritorios && x.wl_escritorios.slug === slug) || (mem || [])[0];
   let esc0 = m && m.wl_escritorios, papel = m ? m.papel : "";
-  if (!esc0 && slug) { const { data: es } = await sb.from("wl_escritorios").select("id, slug, nome, logo_url, cor").eq("slug", slug).maybeSingle(); if (es) { const { data: sup } = await sb.rpc("wl_suporte_ativo", { p_esc: es.id }); if (sup) { esc0 = es; papel = "admin"; S.suporte = true; } } }
+  if (!esc0 && slug) { const { data: es } = await sb.from("wl_escritorios").select("id, slug, nome, logo_url, cor").eq("slug", slug).maybeSingle(); if (es) { const { data: sup } = await sb.rpc("wl_equipe", { p_esc: es.id }); if (sup) { esc0 = es; papel = "admin"; S.suporte = true; } } }
   if (!esc0) return falha("Você não tem acesso ao quadro de tarefas deste escritório.");
   if (papel === "cliente") return falha("O quadro de tarefas é da equipe do escritório.");
   S.wl = esc0; try { localStorage.setItem("dabar-esc", esc0.slug); } catch {}
   $("#lnkPortal").href = $("#lnkVolta").href = "../?e=" + encodeURIComponent(esc0.slug);
-  if (esc0.logo_url) $("#escLogo").src = "../" + esc0.logo_url;
+  if (esc0.logo_url) $("#escLogo").src = /^https?:/i.test(esc0.logo_url) ? esc0.logo_url : "../" + esc0.logo_url;
   document.querySelectorAll('meta[name="theme-color"]').forEach(e => e.setAttribute("content", esc0.cor || "#1F2A33"));
   if (esc0.cor && /^#[0-9a-f]{6}$/i.test(esc0.cor)) { const r = document.documentElement.style; r.setProperty("--brand", esc0.cor); r.setProperty("--brand-2", esc0.cor); }
   S.perfil = { papel: "", nome: (m && m.nome) || S.user.email };
