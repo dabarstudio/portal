@@ -79,6 +79,7 @@ th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--tx
 .kpi{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:12px 14px}
 .kpi b{display:block;font-size:1.4rem}
 .kpi span{font-size:.8rem;color:var(--tx2)}
+button.kpi{font:inherit;text-align:left;cursor:pointer;color:inherit;width:100%}button.kpi:hover{border-color:var(--cor)}button.kpi[aria-pressed="true"]{border-color:var(--cor);box-shadow:inset 0 0 0 2px var(--cor);background:var(--cor-cl)}
 dialog{border:0;border-radius:14px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 50px rgba(0,0,0,.2)}
 dialog form{padding:20px}
 dialog::backdrop{background:rgba(20,25,22,.45)}
@@ -261,9 +262,9 @@ function montarTabs() {
   $("#tabs").innerHTML = t.map(([k, n]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === S.tab}">${n}</button>`).join("");
   render();
 }
-$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = S.esc.slug === "vital" ? "https://dabarstudio.github.io/vitalagroenegocios/quadro/" : "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
 function irPara(tab, extra) { S.tab = tab; S.abre = (extra && extra.cliente) || null; if (extra && extra.comp) S.comp = extra.comp; montarTabs(); }
-function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, painel: vPainel, proc: vProc, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
+function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, painel: vPainel, proc: vProc, msgs: vMsgs, clientes: vClientes, lista: vLista, ficha: vFicha, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
 
 /* ---------- diálogo simples ---------- */
 function dialogo(titulo, campos, okTxt = "Salvar") {
@@ -399,7 +400,7 @@ async function vDocsCliente(c) {
 async function vClientes(c) {
   const cls = await carregarClientes();
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><h2>Clientes</h2><button class="btn" id="cNovo" type="button">+ Novo cliente</button></div>
-    <div class="card tw">${cls.length ? `<table><thead><tr><th>Nome</th><th class="hm">CPF/CNPJ</th><th>Situação</th><th></th></tr></thead><tbody>${cls.map((x) => `<tr><td><b>${esc(x.nome)}</b>${x.regime ? ` <span class="note">· ${esc(x.regime)}</span>` : ""}${x.origem_cad ? '<div class="note">Vem do cadastro principal da Vital</div>' : ""}</td><td class="hm">${esc(x.documento || "—")}</td><td>${x.ativo ? '<span class="chip st-aprovado">Ativo</span>' : '<span class="chip st-pendente">Inativo</span>'}</td>
+    <div class="card tw">${cls.length ? `<table><thead><tr><th>Nome</th><th class="hm">CPF/CNPJ</th><th>Situação</th><th></th></tr></thead><tbody>${cls.map((x) => `<tr><td><b>${linkCli(x.id, x.nome)}</b>${x.regime ? ` <span class="note">· ${esc(x.regime)}</span>` : ""}${x.origem_cad ? '<div class="note">Vem do cadastro principal da Vital</div>' : ""}</td><td class="hm">${esc(x.documento || "—")}</td><td>${x.ativo ? '<span class="chip st-aprovado">Ativo</span>' : '<span class="chip st-pendente">Inativo</span>'}</td>
     <td style="text-align:right"><button class="btn ghost sm" data-ed="${x.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${x.id}" type="button">${x.ativo ? "Desativar" : "Ativar"}</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhum cliente ainda.</div>'}</div>
     <p class="note">Para o cliente enviar documentos, crie um acesso para ele na aba <b>Acessos</b>.${cls.some((x) => x.origem_cad) ? " Os clientes marcados “Vem do cadastro principal da Vital” são atualizados sozinhos a partir do portal da Vital (nome, situação e honorário dos contratos): altere lá, não aqui." : ""}</p>`;
   c.onclick = async (e) => {
@@ -412,6 +413,40 @@ async function vClientes(c) {
   };
 }
 
+/* ---------- ficha do cliente (o "ambiente" dele visto pelo escritório) ---------- */
+function abrirFicha(id) { if (!id) return; if (S.tab !== "ficha") S.fichaVolta = S.tab; S.fichaCli = id; S.tab = "ficha"; document.querySelectorAll("#tabs [data-t]").forEach((b) => b.setAttribute("aria-selected", "false")); render(); window.scrollTo({ top: 0 }); }
+document.addEventListener("click", (e) => { const a = e.target.closest("[data-ficha]"); if (!a || !S.esc) return; e.preventDefault(); e.stopPropagation(); abrirFicha(a.dataset.ficha); }, true);
+const linkCli = (id, nome) => `<a href="#" data-ficha="${id}" class="lkcli">${esc(nome)}</a>`;
+async function vFicha(c) {
+  const cls = await carregarClientes(); const cl = cls.find((x) => x.id === S.fichaCli);
+  if (!cl) { c.innerHTML = '<div class="card empty">Cliente não encontrado.</div>'; return; }
+  const hj = hojeISO();
+  const [{ data: cps }, { data: gs }, { data: ens }, { data: prs }, { data: ms }, { data: us }] = await Promise.all([
+    sb.from("wl_doc_comp").select("id, competencia, prazo").eq("cliente", cl.id).eq("competencia", S.comp),
+    sb.from("wl_guias").select("*").eq("cliente", cl.id).order("vencimento", { ascending: false }).limit(12),
+    sb.from("wl_obrig_entrega").select("*, wl_obrigacoes(nome)").eq("cliente", cl.id).eq("competencia", S.comp).order("vencimento"),
+    sb.from("wl_processo").select("*").eq("cliente", cl.id).order("iniciado_em", { ascending: false }),
+    sb.from("wl_mensagens").select("*").eq("cliente", cl.id).order("criado_em", { ascending: false }).limit(5),
+    sb.from("wl_cliente_usuarios").select("user_id").eq("cliente", cl.id)]);
+  const cp = (cps || [])[0]; const { data: its } = cp ? await sb.from("wl_doc_item").select("*").eq("comp", cp.id).order("ordem") : { data: [] };
+  const ST = { pendente: ["Falta enviar", "st-pendente"], enviado: ["Para conferir", "st-enviado"], aprovado: ["Conferido", "st-aprovado"], recusado: ["Refazer", "st-recusado"] };
+  const stG = (g) => g.cancelada ? ["Cancelada", "st-pendente"] : g.paga_em ? ["Paga", "st-aprovado"] : g.vencimento < hj ? ["Vencida", "st-recusado"] : ["Em aberto", "st-enviado"];
+  const stO = (x) => x.status === "entregue" ? ["Entregue", "st-aprovado"] : x.status === "sem_movimento" ? ["Sem movimento", "st-pendente"] : x.vencimento < hj ? ["Atrasada", "st-recusado"] : ["Em aberto", "st-enviado"];
+  const chip = ([t, k]) => `<span class="chip ${k}">${t}</span>`;
+  c.innerHTML = `<div class="row sb" style="margin-bottom:10px"><div><button class="btn ghost sm" id="fVolta" type="button">← Voltar</button><h2 style="margin-top:8px">${esc(cl.nome)}</h2>
+      <p class="note" style="margin:0">${[cl.regime, cl.departamento, cl.documento, cl.honorario ? "Honorário " + brl(cl.honorario) : "", (us || []).length ? (us || []).length + " acesso(s) ao portal" : "sem acesso ao portal", cl.ativo ? "" : "INATIVO"].filter(Boolean).map(esc).join(" · ")}</p>
+      ${cl.origem_cad ? '<p class="note" style="margin:2px 0 0">Cadastro sincronizado com o portal da Vital.</p>' : ""}</div>
+      <div class="row"><input id="fComp" type="month" value="${S.comp}" style="width:auto"><button class="btn sec sm" data-ir="docs" type="button">Documentos</button><button class="btn sec sm" data-ir="msgs" type="button">Mensagens</button></div></div>
+    <div class="card tw"><h3>Documentos de ${compBR(S.comp)}</h3>${(its || []).length ? `<table><tbody>${its.map((i) => `<tr><td>${esc(i.nome)}</td><td style="text-align:right">${chip(ST[i.status] || [i.status, "st-pendente"])}</td></tr>`).join("")}</tbody></table>` : '<p class="note">Lista do mês ainda não aberta.</p>'}</div>
+    <div class="card tw"><h3>Obrigações e rotinas de ${compBR(S.comp)}</h3>${(ens || []).length ? `<table><tbody>${ens.map((x) => `<tr><td>${esc((x.wl_obrigacoes && x.wl_obrigacoes.nome) || "")}</td><td class="note">vence ${dataBR(x.vencimento)}</td><td style="text-align:right">${chip(stO(x))}</td></tr>`).join("")}</tbody></table>` : '<p class="note">Nenhuma entrega gerada para este mês.</p>'}</div>
+    <div class="card tw"><h3>Guias e honorários</h3>${(gs || []).length ? `<table><tbody>${gs.map((g) => `<tr><td>${esc(g.tipo || "")}${g.categoria === "honorario" ? ' <span class="note">· honorário</span>' : ""}</td><td class="note">${compBR(g.competencia)} · vence ${dataBR(g.vencimento)}</td><td>${brl(g.valor)}</td><td style="text-align:right">${chip(stG(g))}</td></tr>`).join("")}</tbody></table>` : '<p class="note">Nenhuma guia.</p>'}</div>
+    <div class="card tw"><h3>Processos</h3>${(prs || []).length ? `<table><tbody>${prs.map((p) => `<tr><td>${esc(p.nome)}</td><td style="text-align:right">${chip(p.status === "concluido" ? ["Concluído", "st-aprovado"] : ["Em andamento", "st-enviado"])}</td></tr>`).join("")}</tbody></table>` : '<p class="note">Nenhum processo.</p>'}</div>
+    <div class="card tw"><h3>Últimas mensagens</h3>${(ms || []).length ? `<ul class="lst">${ms.map((m) => `<li style="cursor:default"><b>${esc(m.do_escritorio ? S.esc.nome : m.autor_nome || cl.nome)}</b> <span class="note">· ${new Date(m.criado_em).toLocaleDateString("pt-BR")}</span><div>${esc((m.texto || m.nome_arq || "").slice(0, 160))}</div></li>`).join("")}</ul>` : '<p class="note">Nenhuma mensagem.</p>'}</div>`;
+  $("#fComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
+  $("#fVolta").onclick = () => { S.tab = S.fichaVolta || "painel"; montarTabs(); };
+  c.onclick = (e) => { const b = e.target.closest("[data-ir]"); if (b) irPara(b.dataset.ir, { cliente: cl.id }); };
+}
+
 /* ---------- lista padrão ---------- */
 async function vLista(c) {
   const { data: ms } = await sb.from("wl_doc_modelo").select("*").eq("escritorio", S.esc.id).is("cliente", null).order("ordem").order("id");
@@ -421,13 +456,16 @@ async function vLista(c) {
     <td style="text-align:right"><button class="btn ghost sm" data-ed="${m.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${m.id}" type="button">${m.ativo ? "Tirar" : "Voltar"}</button></td></tr>`).join("")}</tbody></table></div><div id="lRot"></div>`;
   (async () => {
     const { data: ob } = await sb.from("wl_obrigacoes").select("id, nome, departamento, dia, mes_offset, meses, ativo").eq("escritorio", S.esc.id).order("departamento").order("nome");
-    const ids = (ob || []).map((o) => o.id); const { data: vs } = ids.length ? await sb.from("wl_obrig_vinculo").select("obrigacao").in("obrigacao", ids) : { data: [] };
+    const ids = (ob || []).map((o) => o.id); const [{ data: vs }, cls] = await Promise.all([ids.length ? sb.from("wl_obrig_vinculo").select("obrigacao, cliente").in("obrigacao", ids) : Promise.resolve({ data: [] }), carregarClientes()]);
+    const quem = (id) => (vs || []).filter((v) => v.obrigacao === id).map((v) => cls.find((x) => x.id === v.cliente)).filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome));
     const n = (id) => (vs || []).filter((v) => v.obrigacao === id).length;
     const quando = (o) => (o.meses || []).length === 12 ? `todo mês · dia ${o.dia === 31 ? "último" : o.dia}` : (o.meses || []).length === 1 ? "anual" : (o.meses || []).length === 4 ? "trimestral" : `${(o.meses || []).length}x por ano`;
     const box = $("#lRot"); if (!box) return;
     box.innerHTML = `<div class="row sb" style="margin:18px 0 6px"><div><h2>Rotinas e obrigações recorrentes</h2><p class="note" style="margin:0">Tarefas que o escritório repete todo mês para cada cliente. Viram entregas com prazo e meta no calendário de <b>Obrigações</b>; marque quais clientes cada uma atende no Cadastro.</p></div><button class="btn sec" id="lObr" type="button">Abrir Obrigações</button></div>
       <div class="card tw"><table><thead><tr><th>Rotina / obrigação</th><th class="hm">Departamento</th><th>Quando</th><th>Clientes</th></tr></thead><tbody>
-      ${(ob || []).map((o) => `<tr><td><b>${esc(o.nome)}</b>${o.ativo ? "" : ' <span class="chip st-pendente">Desligada</span>'}</td><td class="hm">${esc(o.departamento || "—")}</td><td class="note">${quando(o)}</td><td>${n(o.id) || '<span class="note">nenhum</span>'}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Nenhuma rotina cadastrada.</td></tr>'}</tbody></table></div>`;
+      ${(ob || []).map((o) => `<tr data-rexp="${o.id}" style="cursor:pointer" title="Ver os clientes"><td><b>${esc(o.nome)}</b>${o.ativo ? "" : ' <span class="chip st-pendente">Desligada</span>'}</td><td class="hm">${esc(o.departamento || "—")}</td><td class="note">${quando(o)}</td><td>${n(o.id) ? `<span class="chip st-enviado">${n(o.id)} ▾</span>` : '<span class="note">nenhum</span>'}</td></tr>
+        <tr data-rlst="${o.id}" class="hide"><td colspan="4" style="background:var(--cor-cl)">${quem(o.id).length ? `<div class="row" style="flex-wrap:wrap;gap:6px">${quem(o.id).map((x) => `<a href="#" data-ficha="${x.id}" class="chip st-aprovado" style="text-decoration:none">${esc(x.nome)} →</a>`).join("")}</div>` : '<span class="note">Nenhum cliente marcado. Use Abrir Obrigações → Cadastro.</span>'}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Nenhuma rotina cadastrada.</td></tr>'}</tbody></table></div>`;
+    box.addEventListener("click", (ev) => { const r = ev.target.closest("[data-rexp]"); if (!r) return; const l = box.querySelector(`[data-rlst="${r.dataset.rexp}"]`); if (l) l.classList.toggle("hide"); });
     $("#lObr").onclick = () => { const b = document.querySelector('#tabs [data-t="obrig"]'); if (b) { S.obrigVis = "cad"; b.click(); } };
   })();
   c.onclick = async (e) => {
@@ -464,10 +502,10 @@ async function vAcessos(c, escId = S.esc.id, escNome = S.esc.nome) {
       const campos = [{ k: "nome", rot: "Nome", req: true }, { k: "email", rot: "E-mail", tipo: "email", req: true, ac: "off" },
         { k: "papel", rot: "Tipo de acesso", tipo: "select", v: cls.length ? "cliente" : "admin", ops: [["cliente", "Cliente (envia documentos)"], ["equipe", "Equipe do escritório"], ["admin", "Administrador do escritório"]] }];
       if (cls.length) campos.push({ k: "cliente", rot: "Cliente (só para acesso de cliente)", tipo: "select", v: "", ops: [["", "—"], ...cls.filter((x) => x.ativo).map((x) => [x.id, x.nome])] });
-      campos.push({ k: "senha", rot: "Senha provisória (8+ caracteres, letras e números)", tipo: "password", req: true, ac: "new-password" });
+      campos.push({ k: "senha", rot: "Senha provisória (8+ caracteres, letras e números) · deixe em branco se a pessoa já tem login no portal da Vital", tipo: "password", ac: "new-password" });
       const r = await dialogo("Novo acesso", campos, "Criar acesso"); if (!r) return;
       const j = await chamarAcessos({ acao: "criar", escritorio: escId, ...r });
-      if (j.erro) return aviso(j.erro, false); aviso("Acesso criado. Passe o e-mail e a senha provisória para a pessoa."); return S.tab === "vital" ? vAcessos(c, escId, escNome) : render();
+      if (j.erro) return aviso(j.erro, false); aviso(j.existente ? "Pronto. Esta pessoa já tinha login: ela entra no Dabar com o mesmo e-mail e a mesma senha de sempre." : "Acesso criado. Passe o e-mail e a senha provisória para a pessoa."); return S.tab === "vital" ? vAcessos(c, escId, escNome) : render();
     }
     const sn = e.target.closest("[data-sn]"); if (sn) { const r = await dialogo("Nova senha provisória", [{ k: "senha", rot: "Senha provisória", tipo: "password", req: true, ac: "new-password" }]); if (!r) return;
       const j = await chamarAcessos({ acao: "senha", escritorio: escId, user_id: sn.dataset.sn, senha: r.senha }); aviso(j.erro || "Senha provisória definida.", !j.erro); return; }
@@ -533,7 +571,7 @@ async function vVital(c) {
     <div class="card tw"><table><thead><tr><th>Escritório</th><th class="hm">Link</th><th>Suporte Dabar</th><th></th></tr></thead><tbody>
     ${(es || []).map((x) => { const sup = x.suporte_ate && new Date(x.suporte_ate) > new Date(); return `<tr><td><b>${esc(x.nome)}</b>${x.ativo ? "" : ' <span class="chip st-pendente">Suspenso</span>'}</td><td class="hm note">?e=${esc(x.slug)}</td>
       <td>${sup ? `<span class="chip st-aprovado">Autorizado até ${new Date(x.suporte_ate).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>` : '<span class="chip st-pendente">Sem autorização</span>'}</td>
-      <td style="text-align:right;white-space:nowrap">${sup ? `<button class="btn sm" data-entra="${x.id}" type="button">Entrar no ambiente</button> ` : ""}<button class="btn sec sm" data-ac="${x.id}" type="button">Acessos</button></td></tr>`; }).join("")}</tbody></table></div>
+      <td style="text-align:right;white-space:nowrap">${sup || x.slug === "vital" ? `<button class="btn sm" data-entra="${x.id}" type="button">Entrar no ambiente</button> ` : ""}<button class="btn sec sm" data-ac="${x.id}" type="button">Acessos</button></td></tr>`; }).join("")}</tbody></table></div>
     <p class="note">A Dabar só entra no ambiente de um escritório quando o administrador dele autoriza o suporte (em <b>Escritório → Suporte Dabar</b>). Sem autorização, você só consegue criar o primeiro administrador. Cada entrada fica registrada para o escritório ver.</p><div id="vAc"></div>`;
   c.onclick = async (e) => {
     if (e.target.id === "vNovo") { const r = await dialogo("Novo escritório", [{ k: "nome", rot: "Nome do escritório", req: true }, { k: "slug", rot: "Apelido no link (letras minúsculas e hífen)", req: true }, { k: "cor", rot: "Cor (ex.: #4F5D33)", v: "#4F5D33" }]); if (!r) return;
@@ -791,19 +829,22 @@ async function vObrig(c) {
   const leg = { "d-aberta": "Em aberto", "d-ok": "Entregue no prazo", "d-atr": "Atrasada", "d-tarde": "Entregue com atraso", "d-sm": "Sem movimento" };
   const cnt = (k) => (en || []).filter((x) => cor(x) === k).length;
   const nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "—";
-  const grupos = (ob || []).map((o) => ({ o, es: (en || []).filter((x) => x.obrigacao === o.id) })).filter((g) => g.es.length);
+  const fo = S.fObrig || "";
+  const grupos = (ob || []).map((o) => ({ o, es: (en || []).filter((x) => x.obrigacao === o.id && (!fo || cor(x) === fo)) })).filter((g) => g.es.length);
   c.innerHTML = topo + `<div class="row" style="margin-bottom:12px"><label for="oComp" style="margin:0">Competência</label><input id="oComp" type="month" value="${S.comp}" style="width:auto"><button class="btn ghost sm" id="oGerar" type="button">Gerar entregas do mês</button></div>
-    <div class="kpis">${Object.keys(leg).map((k) => `<div class="kpi"><b>${cnt(k)}</b><span><i class="dot ${k}"></i> ${leg[k]}</span></div>`).join("")}</div>
+    <div class="kpis">${Object.keys(leg).map((k) => `<button type="button" class="kpi" data-ofil="${k}" aria-pressed="${fo === k}" title="Mostrar só: ${leg[k]}"><b>${cnt(k)}</b><span><i class="dot ${k}"></i> ${leg[k]}</span></button>`).join("")}</div>
+    ${fo ? `<p class="note" style="margin:8px 0">Mostrando só: <b>${leg[fo]}</b> · <a href="#" data-ofil="">mostrar todas</a></p>` : '<p class="note" style="margin:8px 0">Toque num quadro acima para filtrar.</p>'}
     ${grupos.length ? grupos.map(({ o, es }) => `<div class="card tw"><div class="row sb"><h3>${esc(o.nome)}</h3><span class="note">vence dia ${o.dia} · meta ${o.meta_dias} dia(s) útil(eis) antes</span></div>
       <table class="cal" style="margin-top:6px"><thead><tr><th><input type="checkbox" data-todos="${o.id}" aria-label="Selecionar todos"></th><th>Cliente</th><th class="c">Situação</th><th class="hm">Meta</th><th>Vencimento</th><th class="hm">Responsável</th><th></th></tr></thead><tbody>
-      ${es.map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${esc(nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
+      ${es.map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${linkCli(x.cliente, nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
         <td class="c"><span class="dot ${cor(x)}" title="${leg[cor(x)]}"></span></td><td class="hm">${dataBR(x.meta)}</td><td>${dataBR(x.vencimento)}</td><td class="hm">${esc(nomeEquipe(x.responsavel_v) || "")}</td>
         <td style="text-align:right;white-space:nowrap">${x.status === "aberta" ? `<button class="btn sm" data-ent="${x.id}" type="button">Entregue</button> <button class="btn ghost sm" data-sm="${x.id}" type="button">Sem movimento</button> <button class="btn ghost sm" data-tar="${x.id}" type="button">Tarefa</button>` : `<button class="btn ghost sm" data-reab="${x.id}" type="button">Reabrir</button>`}</td></tr>`).join("")}</tbody></table>
       <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn ghost sm" data-smlote="${o.id}" type="button">Baixa sem movimento nos marcados</button></div></div>`).join("")
-    : `<div class="card empty">Nenhuma entrega para ${compBR(S.comp)}. Cadastre as obrigações e os clientes de cada uma na aba <b>Cadastro</b>, depois toque em <b>Gerar entregas do mês</b>.</div>`}`;
+    : fo ? `<div class="card empty">Nenhuma entrega “${leg[fo]}” em ${compBR(S.comp)}.</div>` : `<div class="card empty">Nenhuma entrega para ${compBR(S.comp)}. Cadastre as obrigações e os clientes de cada uma na aba <b>Cadastro</b>, depois toque em <b>Gerar entregas do mês</b>.</div>`}`;
   $("#oComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
   c.onclick = async (e) => {
     const vis = e.target.closest("[data-vis]"); if (vis) { S.obrigVis = vis.dataset.vis; return render(); }
+    const ofl = e.target.closest("[data-ofil]"); if (ofl) { e.preventDefault(); S.fObrig = S.fObrig === ofl.dataset.ofil ? "" : ofl.dataset.ofil; return render(); }
     if (e.target.id === "oGerar") { const { data, error } = await sb.rpc("wl_gerar_obrig", { p_esc: S.esc.id, p_comp: S.comp }); aviso(error ? "Não foi possível gerar." : `${data || 0} entrega(s) criada(s).`, !error); return render(); }
     const td = e.target.closest("[data-todos]"); if (td) { c.querySelectorAll(`[data-ob="${td.dataset.todos}"]:not(:disabled)`).forEach((x) => (x.checked = td.checked)); return; }
     const ent = e.target.closest("[data-ent]"); if (ent) { await sb.from("wl_obrig_entrega").update({ status: "entregue", entregue_em: new Date().toISOString() }).eq("id", +ent.dataset.ent); return render(); }
@@ -1048,24 +1089,24 @@ async function vPainel(c) {
     return { cl, cp, falta, conferir, docAtr, impV, hon: hon.length, honV, ob: ob.length, obAtr, pr, ms, alerta };
   }).sort((a, b) => b.alerta - a.alerta || a.cl.nome.localeCompare(b.cl.nome));
   const s = (f) => L.reduce((a, x) => a + f(x), 0);
+  const FP = { alerta: ["clientes com atraso", (x) => x.alerta], conferir: ["documentos para conferir", (x) => x.conferir], obAtr: ["obrigações atrasadas", (x) => x.obAtr], impV: ["guias vencidas sem pagamento", (x) => x.impV], honV: ["honorários em atraso", (x) => x.hon], pr: ["processos em andamento", (x) => x.pr] };
+  const fp = FP[S.fPainel] ? S.fPainel : "", LV = fp ? L.filter((x) => FP[fp][1](x)) : L;
+  const kp = (k, v, st) => `<button type="button" class="kpi" data-pfil="${k}" aria-pressed="${fp === k}"><b${st ? ` style="${st}"` : ""}>${v}</b><span>${FP[k][0]}</span></button>`;
   const deps = [...new Set(["Fiscal", "Contábil", "Pessoal", "Legal", ...ativos.map((x) => x.departamento).filter(Boolean)])];
   const cel = (n, ruim) => n ? `<span class="chip ${ruim ? "st-recusado" : "st-enviado"}">${n}</span>` : '<span class="note">—</span>';
   c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Saúde da carteira</h2><p class="note" style="margin:0">Tudo o que está pendente ou atrasado, cliente por cliente. Os mais críticos aparecem primeiro.</p></div>
     <div class="row"><select id="pDep" style="width:auto"><option value="">Todos os departamentos</option>${deps.map((d) => `<option ${d === dep ? "selected" : ""}>${esc(d)}</option>`).join("")}</select><input id="pComp" type="month" value="${S.comp}" style="width:auto"><button class="btn sec sm" id="pLote" type="button">Tarefa para vários clientes</button></div></div>
     <div class="kpis">
-      <div class="kpi"><b style="color:var(--err)">${L.filter((x) => x.alerta).length}</b><span>clientes com atraso</span></div>
-      <div class="kpi"><b>${s((x) => x.conferir)}</b><span>documentos para conferir</span></div>
-      <div class="kpi"><b>${s((x) => x.obAtr)}</b><span>obrigações atrasadas</span></div>
-      <div class="kpi"><b>${s((x) => x.impV)}</b><span>guias vencidas sem pagamento</span></div>
-      <div class="kpi"><b>${brl(s((x) => x.honV))}</b><span>honorários em atraso</span></div>
-      <div class="kpi"><b>${s((x) => x.pr)}</b><span>processos em andamento</span></div></div>
-    <div class="card tw">${L.length ? `<table><thead><tr><th>Cliente</th><th>Documentos (${compBR(S.comp)})</th><th>Obrigações atrasadas</th><th class="hm">Guias vencidas</th><th class="hm">Honorários</th><th class="hm">Processos</th><th class="hm">Mensagens</th></tr></thead><tbody>
-    ${L.map((x) => `<tr><td><b>${x.alerta ? "🔴 " : "🟢 "}${esc(x.cl.nome)}</b>${x.cl.departamento ? `<div class="note">${esc(x.cl.departamento)}</div>` : ""}</td>
+      ${kp("alerta", L.filter((x) => x.alerta).length, "color:var(--err)")}${kp("conferir", s((x) => x.conferir))}${kp("obAtr", s((x) => x.obAtr))}${kp("impV", s((x) => x.impV))}${kp("honV", brl(s((x) => x.honV)))}${kp("pr", s((x) => x.pr))}</div>
+    ${fp ? `<p class="note" style="margin:8px 0">Mostrando só clientes com: <b>${FP[fp][0]}</b> · <a href="#" data-pfil="">mostrar todos</a></p>` : '<p class="note" style="margin:8px 0">Toque num quadro acima para filtrar os clientes.</p>'}
+    <div class="card tw">${LV.length ? `<table><thead><tr><th>Cliente</th><th>Documentos (${compBR(S.comp)})</th><th>Obrigações atrasadas</th><th class="hm">Guias vencidas</th><th class="hm">Honorários</th><th class="hm">Processos</th><th class="hm">Mensagens</th></tr></thead><tbody>
+    ${LV.map((x) => `<tr><td><b>${x.alerta ? "🔴 " : "🟢 "}${linkCli(x.cl.id, x.cl.nome)}</b>${x.cl.departamento ? `<div class="note">${esc(x.cl.departamento)}</div>` : ""}</td>
       <td>${x.cp ? (x.falta ? `<span class="chip ${x.docAtr ? "st-recusado" : "st-pendente"}">faltam ${x.falta}</span>` : '<span class="chip st-aprovado">completo</span>') + (x.conferir ? ` <span class="chip st-enviado">${x.conferir} p/ conferir</span>` : "") : '<span class="note">lista não aberta</span>'}</td>
       <td>${cel(x.obAtr, true)}${x.ob - x.obAtr ? ` <span class="note">${x.ob - x.obAtr} em aberto</span>` : ""}</td><td class="hm">${cel(x.impV, true)}</td><td class="hm">${x.hon ? `<span class="chip st-recusado">${brl(x.honV)}</span>` : '<span class="note">em dia</span>'}</td><td class="hm">${cel(x.pr)}</td><td class="hm">${cel(x.ms)}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Cadastre os clientes na aba <b>Clientes</b>.</div>'}</div>`;
   $("#pDep").onchange = (e) => { S.fDep = e.target.value; render(); };
   $("#pComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
   $("#pLote").onclick = tarefaEmLote;
+  c.onclick = (e) => { const b = e.target.closest("[data-pfil]"); if (!b) return; e.preventDefault(); S.fPainel = S.fPainel === b.dataset.pfil ? "" : b.dataset.pfil; render(); };
 }
 
 /* ---------- honorários ---------- */
