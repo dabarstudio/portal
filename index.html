@@ -272,7 +272,7 @@ function dialogo(titulo, campos, okTxt = "Salvar") {
     const d = $("#dlg"), f = $("#dlgF");
     f.innerHTML = `<h2>${esc(titulo)}</h2>` + campos.map((c) => c.tipo === "info" ? `<p class="note">${esc(c.texto)}</p>` :
       `<label for="dg_${c.k}">${esc(c.rot)}</label>` + (c.tipo === "select" ? `<select id="dg_${c.k}">${c.ops.map(([v, n]) => `<option value="${esc(v)}" ${v === c.v ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`
-      : c.tipo === "area" ? `<textarea id="dg_${c.k}" rows="3">${esc(c.v || "")}</textarea>` : `<input id="dg_${c.k}" type="${c.tipo || "text"}" value="${esc(c.v || "")}" ${c.req ? "required" : ""} ${c.ac ? `autocomplete="${c.ac}"` : ""}>`)).join("")
+      : c.tipo === "area" ? `<textarea id="dg_${c.k}" rows="3">${esc(c.v || "")}</textarea>` : `<input id="dg_${c.k}" type="${c.tipo === "dinheiro" ? "text" : (c.tipo || "text")}" ${c.tipo === "dinheiro" ? 'inputmode="decimal" placeholder="Ex.: 1.250,50"' : ""} value="${esc(c.v || "")}" ${c.req ? "required" : ""} ${c.ac ? `autocomplete="${c.ac}"` : ""}>`)).join("")
       + `<p class="msg err" id="dgMsg"></p><div class="dlgft"><button class="btn ghost" value="x" formnovalidate>Cancelar</button><button class="btn" value="ok">${esc(okTxt)}</button></div>`;
     const fim = () => { const ok = d.returnValue === "ok"; d.removeEventListener("close", fim); if (!ok) return res(null); const o = {}; campos.forEach((c) => { if (c.k) o[c.k] = $("#dg_" + c.k).value.trim(); }); res(o); };
     d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
@@ -404,11 +404,11 @@ async function vClientes(c) {
     <td style="text-align:right"><button class="btn ghost sm" data-ed="${x.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${x.id}" type="button">${x.ativo ? "Desativar" : "Ativar"}</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhum cliente ainda.</div>'}</div>
     <p class="note">Para o cliente enviar documentos, crie um acesso para ele na aba <b>Acessos</b>.${cls.some((x) => x.origem_cad) ? " Os clientes marcados “Vem do cadastro principal da Vital” são atualizados sozinhos a partir do portal da Vital (nome, situação e honorário dos contratos): altere lá, não aqui." : ""}</p>`;
   c.onclick = async (e) => {
-    if (e.target.id === "cNovo") { const r = await dialogo("Novo cliente", [{ k: "nome", rot: "Nome / razão social", req: true }, { k: "documento", rot: "CPF ou CNPJ (opcional)" }]); if (!r || !r.nome) return;
-      const { error } = await sb.from("wl_clientes").insert({ escritorio: S.esc.id, nome: r.nome, documento: r.documento || null }); aviso(error ? "Não foi possível salvar." : "Cliente cadastrado.", !error); return render(); }
-    const ed = e.target.closest("[data-ed]"); if (ed) { const x = cls.find((y) => y.id === ed.dataset.ed); const r = await dialogo("Editar cliente", [{ k: "nome", rot: "Nome / razão social", v: x.nome, req: true }, { k: "documento", rot: "CPF ou CNPJ", v: x.documento }, { k: "honorario", rot: "Honorário mensal (R$)", tipo: "number", v: x.honorario == null ? "" : String(x.honorario) },
+    if (e.target.id === "cNovo") { const r = await dialogo("Novo cliente", [{ k: "nome", rot: "Nome / razão social", req: true }, { k: "documento", rot: "CPF ou CNPJ (opcional)" }, { k: "honorario", rot: "Honorário mensal (R$, opcional)", tipo: "dinheiro" }]); if (!r || !r.nome) return;
+      const { error } = await sb.from("wl_clientes").insert({ escritorio: S.esc.id, nome: r.nome, documento: r.documento || null, honorario: valorBR(r.honorario) }); aviso(error ? "Não foi possível salvar." : "Cliente cadastrado.", !error); return render(); }
+    const ed = e.target.closest("[data-ed]"); if (ed) { const x = cls.find((y) => y.id === ed.dataset.ed); const r = await dialogo("Editar cliente", [{ k: "nome", rot: "Nome / razão social", v: x.nome, req: true }, { k: "documento", rot: "CPF ou CNPJ", v: x.documento }, { k: "honorario", rot: "Honorário mensal (R$)", tipo: "dinheiro", v: valorTxt(x.honorario) },
         { k: "departamento", rot: "Departamento principal", tipo: "select", v: x.departamento || "", ops: [["", "—"], ["Fiscal", "Fiscal"], ["Contábil", "Contábil"], ["Pessoal", "Pessoal"], ["Legal", "Legal"]] }]); if (!r) return;
-      await sb.from("wl_clientes").update({ nome: r.nome, documento: r.documento || null, honorario: r.honorario === "" ? null : +r.honorario, departamento: r.departamento || null }).eq("id", x.id); return render(); }
+      await sb.from("wl_clientes").update({ nome: r.nome, documento: r.documento || null, honorario: valorBR(r.honorario), departamento: r.departamento || null }).eq("id", x.id); return render(); }
     const at = e.target.closest("[data-at]"); if (at) { const x = cls.find((y) => y.id === at.dataset.at); await sb.from("wl_clientes").update({ ativo: !x.ativo }).eq("id", x.id); return render(); }
   };
 }
@@ -583,6 +583,8 @@ async function vVital(c) {
 }
 
 /* ---------- utilidades fase 2 ---------- */
+const valorBR = (v) => { let s = String(v ?? "").trim().replace(/[R$\s]/g, ""); if (!s) return null; if (s.includes(",") || /^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); const n = Number(s); return isFinite(n) ? Math.round(n * 100) / 100 : null; };
+const valorTxt = (v) => { const n = valorBR(v); return n == null ? "" : n.toFixed(2).replace(".", ","); };
 const brl = (v) => v == null || v === "" ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hojeISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const compBR = (c) => c ? c.split("-").reverse().join("/") : "—";
@@ -753,7 +755,7 @@ async function conferirGuias(files, cls) {
   const ops = (v) => `<option value="">— escolha —</option>` + cls.filter((x) => x.ativo).map((x) => `<option value="${x.id}" ${x.id === v ? "selected" : ""}>${esc(x.nome)}</option>`).join("");
   box.innerHTML = `<div class="card"><div class="row sb"><h3>Conferência (${linhas.length})</h3><span class="note">Confira os campos lidos pelo robô antes de enviar.</span></div><div class="tw"><table><thead><tr><th>Arquivo</th><th>Cliente</th><th>Guia</th><th>Competência</th><th>Vencimento</th><th>Valor</th><th></th></tr></thead><tbody>
     ${linhas.map((l, i) => `<tr data-l="${i}"><td class="note" style="max-width:160px;word-break:break-all">${esc(l.f.name)}${l.pix ? " · Pix ✓" : ""}</td><td><select data-k="cliente" style="min-width:160px">${ops(l.cliente)}</select></td><td><input data-k="tipo" value="${esc(l.tipo)}" style="min-width:110px"></td>
-    <td><input data-k="competencia" type="month" value="${l.competencia}"></td><td><input data-k="vencimento" type="date" value="${l.vencimento}"></td><td><input data-k="valor" type="number" step="0.01" value="${l.valor}" style="width:120px"></td><td><button class="btn ghost sm" data-tira="${i}" type="button">Tirar</button></td></tr>`).join("")}</tbody></table></div>
+    <td><input data-k="competencia" type="month" value="${l.competencia}"></td><td><input data-k="vencimento" type="date" value="${l.vencimento}"></td><td><input data-k="valor" type="text" inputmode="decimal" placeholder="0,00" value="${valorTxt(l.valor)}" style="width:120px"></td><td><button class="btn ghost sm" data-tira="${i}" type="button">Tirar</button></td></tr>`).join("")}</tbody></table></div>
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" id="gConfX" type="button">Cancelar</button><button class="btn" id="gConfOk" type="button">Enviar aos clientes</button></div></div>`;
   box.oninput = (e) => { const tr = e.target.closest("[data-l]"); if (tr && e.target.dataset.k) linhas[+tr.dataset.l][e.target.dataset.k] = e.target.value; };
   box.onchange = box.oninput;
@@ -766,7 +768,7 @@ async function conferirGuias(files, cls) {
     e.target.disabled = true; let n = 0;
     for (const l of ok) {
       const path = await subirArquivo(S.esc.id, l.cliente, "guias", l.f); if (!path) continue;
-      const { data: g, error } = await sb.from("wl_guias").insert({ escritorio: S.esc.id, cliente: l.cliente, tipo: l.tipo.trim(), competencia: l.competencia || null, vencimento: l.vencimento, valor: l.valor === "" ? null : +l.valor, pix: l.pix || null, linha: l.linha || null, path, nome_arq: l.f.name }).select("id").single();
+      const { data: g, error } = await sb.from("wl_guias").insert({ escritorio: S.esc.id, cliente: l.cliente, tipo: l.tipo.trim(), competencia: l.competencia || null, vencimento: l.vencimento, valor: valorBR(l.valor), pix: l.pix || null, linha: l.linha || null, path, nome_arq: l.f.name }).select("id").single();
       if (error) { await sb.storage.from("wl-docs").remove([path]); aviso(`Falha ao registrar "${l.f.name}".`, false); continue; }
       n++;
       if (l.competencia) { // baixa automática na obrigação correspondente
@@ -1034,13 +1036,13 @@ function dlgClientes(titulo, campos, cls, opts = {}) {
       (c.tipo === "select" ? `<select id="dc_${c.k}">${c.ops.map(([v, n]) => `<option value="${esc(v)}" ${v === c.v ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`
         : c.tipo === "area" ? `<textarea id="dc_${c.k}" rows="4">${esc(c.v || "")}</textarea>` : `<input id="dc_${c.k}" type="${c.tipo || "text"}" value="${esc(c.v || "")}">`)).join("") +
       `<div class="row sb" style="margin-top:14px"><b>Clientes</b><label style="margin:0;display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="dcTodos" style="width:auto" ${opts.todos ? "checked" : ""}> Todos</label></div>
-      <div style="max-height:40vh;overflow:auto;border:1px solid var(--ln);border-radius:10px;padding:4px 10px;margin-top:6px">${cls.map((x) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--ln);flex-wrap:nowrap"><label style="margin:0;flex:1;display:flex;gap:8px;align-items:center;color:var(--tx);font-weight:500"><input type="checkbox" data-dc="${x.id}" style="width:auto" ${opts.todos ? "checked" : ""}> ${esc(x.nome)}</label>${opts.valor ? `<input type="number" step="0.01" data-dv="${x.id}" value="${x.honorario ?? ""}" placeholder="Valor" style="width:120px">` : ""}</div>`).join("") || '<p class="note">Nenhum cliente ativo.</p>'}</div>
+      <div style="max-height:40vh;overflow:auto;border:1px solid var(--ln);border-radius:10px;padding:4px 10px;margin-top:6px">${cls.map((x) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--ln);flex-wrap:nowrap"><label style="margin:0;flex:1;display:flex;gap:8px;align-items:center;color:var(--tx);font-weight:500"><input type="checkbox" data-dc="${x.id}" style="width:auto" ${opts.todos ? "checked" : ""}> ${esc(x.nome)}</label>${opts.valor ? `<input type="text" inputmode="decimal" data-dv="${x.id}" value="${valorTxt(x.honorario)}" placeholder="Valor" style="width:120px">` : ""}</div>`).join("") || '<p class="note">Nenhum cliente ativo.</p>'}</div>
       <p class="msg err" id="dcMsg"></p><div class="dlgft"><button class="btn ghost" value="x" formnovalidate>Cancelar</button><button class="btn" value="ok">${esc(opts.ok || "Confirmar")}</button></div>`;
     $("#dcTodos").onchange = (e) => f.querySelectorAll("[data-dc]").forEach((x) => (x.checked = e.target.checked));
     const fim = () => { d.removeEventListener("close", fim); if (d.returnValue !== "ok") return res(null);
       const o = {}; campos.forEach((c) => { if (c.k) o[c.k] = $("#dc_" + c.k).value.trim(); });
       o.ids = [...f.querySelectorAll("[data-dc]:checked")].map((x) => x.dataset.dc);
-      if (opts.valor) { o.valores = {}; o.ids.forEach((id) => { const v = f.querySelector(`[data-dv="${id}"]`).value; o.valores[id] = v === "" ? null : +v; }); }
+      if (opts.valor) { o.valores = {}; o.ids.forEach((id) => { const v = f.querySelector(`[data-dv="${id}"]`).value; o.valores[id] = valorBR(v); }); }
       res(o); };
     d.addEventListener("close", fim); d.returnValue = ""; d.showModal();
   });
