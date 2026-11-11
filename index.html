@@ -193,6 +193,16 @@ function aplicarMarca(m) {
     nm.textContent = m === DABAR ? (img.id === "lgLogo" ? "Acesso à plataforma" : "Área da Dabar") : (m.logo_url && img.id === "lgLogo" ? "Portal do cliente" : m.nome);
   }
 }
+async function corDaLogo(u) {
+  const img = await new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = u; });
+  const cv = document.createElement("canvas"); cv.width = cv.height = 48; const cx = cv.getContext("2d"); cx.drawImage(img, 0, 0, 48, 48);
+  const d = cx.getImageData(0, 0, 48, 48).data, cont = {};
+  for (let i = 0; i < d.length; i += 4) { const [r, g, b, a] = [d[i], d[i + 1], d[i + 2], d[i + 3]]; if (a < 200) continue; const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx > 235 && mn > 235) continue; if (mx < 25) continue; if (mx - mn < 30) continue; const k = [r, g, b].map((x) => Math.round(x / 24) * 24).join(","); cont[k] = (cont[k] || 0) + 1; }
+  const top = Object.entries(cont).sort((a, b) => b[1] - a[1])[0]; if (!top) return null;
+  let [r, g, b] = top[0].split(",").map(Number); const lum = (0.299 * r + 0.587 * g + 0.114 * b); if (lum > 150) { const f = 150 / lum; r *= f; g *= f; b *= f; }
+  return "#" + [r, g, b].map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0")).join("");
+}
 function clarear(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; const f = (x) => Math.round(x + (255 - x) * 0.88); return `rgb(${f(r)},${f(g)},${f(b)})`; }
 
 /* ---------- login ---------- */
@@ -251,7 +261,7 @@ function montarTabs() {
   $("#tabs").innerHTML = t.map(([k, n]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === S.tab}">${n}</button>`).join("");
   render();
 }
-$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (!b) return; if (b.dataset.t === "quadro") { location.href = S.esc.slug === "vital" ? "https://dabarstudio.github.io/vitalagroenegocios/quadro/" : "quadro/?e=" + encodeURIComponent(S.esc.slug); return; } S.tab = b.dataset.t; S.abre = null; montarTabs(); });
 function irPara(tab, extra) { S.tab = tab; S.abre = (extra && extra.cliente) || null; if (extra && extra.comp) S.comp = extra.comp; montarTabs(); }
 function render() { const c = $("#conteudo"); c.innerHTML = '<div class="empty">Carregando…</div>'; ({ inicio: vInicio, meus: vMeus, docs: vDocs, guias: vGuias, obrig: vObrig, painel: vPainel, proc: vProc, msgs: vMsgs, clientes: vClientes, lista: vLista, quadro: vQuadro, acessos: vAcessos, marca: vMarca, vital: vVital })[S.tab](c).catch((e) => { c.innerHTML = `<div class="card"><p class="msg err">Algo deu errado: ${esc(e.message || e)}</p></div>`; }); }
 
@@ -389,9 +399,9 @@ async function vDocsCliente(c) {
 async function vClientes(c) {
   const cls = await carregarClientes();
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><h2>Clientes</h2><button class="btn" id="cNovo" type="button">+ Novo cliente</button></div>
-    <div class="card tw">${cls.length ? `<table><thead><tr><th>Nome</th><th class="hm">CPF/CNPJ</th><th>Situação</th><th></th></tr></thead><tbody>${cls.map((x) => `<tr><td><b>${esc(x.nome)}</b></td><td class="hm">${esc(x.documento || "—")}</td><td>${x.ativo ? '<span class="chip st-aprovado">Ativo</span>' : '<span class="chip st-pendente">Inativo</span>'}</td>
+    <div class="card tw">${cls.length ? `<table><thead><tr><th>Nome</th><th class="hm">CPF/CNPJ</th><th>Situação</th><th></th></tr></thead><tbody>${cls.map((x) => `<tr><td><b>${esc(x.nome)}</b>${x.regime ? ` <span class="note">· ${esc(x.regime)}</span>` : ""}${x.origem_cad ? '<div class="note">Vem do cadastro principal da Vital</div>' : ""}</td><td class="hm">${esc(x.documento || "—")}</td><td>${x.ativo ? '<span class="chip st-aprovado">Ativo</span>' : '<span class="chip st-pendente">Inativo</span>'}</td>
     <td style="text-align:right"><button class="btn ghost sm" data-ed="${x.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${x.id}" type="button">${x.ativo ? "Desativar" : "Ativar"}</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhum cliente ainda.</div>'}</div>
-    <p class="note">Para o cliente enviar documentos, crie um acesso para ele na aba <b>Acessos</b>.</p>`;
+    <p class="note">Para o cliente enviar documentos, crie um acesso para ele na aba <b>Acessos</b>.${cls.some((x) => x.origem_cad) ? " Os clientes marcados “Vem do cadastro principal da Vital” são atualizados sozinhos a partir do portal da Vital (nome, situação e honorário dos contratos): altere lá, não aqui." : ""}</p>`;
   c.onclick = async (e) => {
     if (e.target.id === "cNovo") { const r = await dialogo("Novo cliente", [{ k: "nome", rot: "Nome / razão social", req: true }, { k: "documento", rot: "CPF ou CNPJ (opcional)" }]); if (!r || !r.nome) return;
       const { error } = await sb.from("wl_clientes").insert({ escritorio: S.esc.id, nome: r.nome, documento: r.documento || null }); aviso(error ? "Não foi possível salvar." : "Cliente cadastrado.", !error); return render(); }
@@ -408,7 +418,18 @@ async function vLista(c) {
   c.innerHTML = `<div class="row sb" style="margin-bottom:6px"><div><h2>Lista do mês (padrão)</h2><p class="note" style="margin:0">Documentos que todo cliente precisa enviar. A lista de cada mês é aberta no dia 1 com estes itens; mudanças valem para os próximos meses.</p></div><button class="btn" id="lNovo" type="button">+ Documento</button></div>
     <div class="card tw" style="margin-top:12px"><table><thead><tr><th>#</th><th>Documento</th><th class="hm">Detalhe</th><th>Situação</th><th></th></tr></thead><tbody>
     ${(ms || []).map((m) => `<tr><td>${m.ordem}</td><td><b>${esc(m.nome)}</b></td><td class="hm note">${esc(m.descricao || "")}</td><td>${m.ativo ? '<span class="chip st-aprovado">Na lista</span>' : '<span class="chip st-pendente">Fora</span>'}</td>
-    <td style="text-align:right"><button class="btn ghost sm" data-ed="${m.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${m.id}" type="button">${m.ativo ? "Tirar" : "Voltar"}</button></td></tr>`).join("")}</tbody></table></div>`;
+    <td style="text-align:right"><button class="btn ghost sm" data-ed="${m.id}" type="button">Editar</button> <button class="btn ghost sm" data-at="${m.id}" type="button">${m.ativo ? "Tirar" : "Voltar"}</button></td></tr>`).join("")}</tbody></table></div><div id="lRot"></div>`;
+  (async () => {
+    const { data: ob } = await sb.from("wl_obrigacoes").select("id, nome, departamento, dia, mes_offset, meses, ativo").eq("escritorio", S.esc.id).order("departamento").order("nome");
+    const ids = (ob || []).map((o) => o.id); const { data: vs } = ids.length ? await sb.from("wl_obrig_vinculo").select("obrigacao").in("obrigacao", ids) : { data: [] };
+    const n = (id) => (vs || []).filter((v) => v.obrigacao === id).length;
+    const quando = (o) => (o.meses || []).length === 12 ? `todo mês · dia ${o.dia === 31 ? "último" : o.dia}` : (o.meses || []).length === 1 ? "anual" : (o.meses || []).length === 4 ? "trimestral" : `${(o.meses || []).length}x por ano`;
+    const box = $("#lRot"); if (!box) return;
+    box.innerHTML = `<div class="row sb" style="margin:18px 0 6px"><div><h2>Rotinas e obrigações recorrentes</h2><p class="note" style="margin:0">Tarefas que o escritório repete todo mês para cada cliente. Viram entregas com prazo e meta no calendário de <b>Obrigações</b>; marque quais clientes cada uma atende no Cadastro.</p></div><button class="btn sec" id="lObr" type="button">Abrir Obrigações</button></div>
+      <div class="card tw"><table><thead><tr><th>Rotina / obrigação</th><th class="hm">Departamento</th><th>Quando</th><th>Clientes</th></tr></thead><tbody>
+      ${(ob || []).map((o) => `<tr><td><b>${esc(o.nome)}</b>${o.ativo ? "" : ' <span class="chip st-pendente">Desligada</span>'}</td><td class="hm">${esc(o.departamento || "—")}</td><td class="note">${quando(o)}</td><td>${n(o.id) || '<span class="note">nenhum</span>'}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Nenhuma rotina cadastrada.</td></tr>'}</tbody></table></div>`;
+    $("#lObr").onclick = () => { const b = document.querySelector('#tabs [data-t="obrig"]'); if (b) { S.obrigVis = "cad"; b.click(); } };
+  })();
   c.onclick = async (e) => {
     if (e.target.id === "lNovo") { const r = await dialogo("Novo documento", [{ k: "nome", rot: "Documento", req: true }, { k: "descricao", rot: "Detalhe para o cliente (opcional)" }, { k: "ordem", rot: "Ordem", tipo: "number", v: String(((ms || []).length || 0) + 1) }]); if (!r || !r.nome) return;
       await sb.from("wl_doc_modelo").insert({ escritorio: S.esc.id, nome: r.nome, descricao: r.descricao || null, ordem: +r.ordem || 0 }); return render(); }
@@ -460,6 +481,9 @@ async function vMarca(c) {
   const e = S.esc;
   c.innerHTML = `<div class="card" style="max-width:560px"><h2>Escritório</h2><form id="fMarca">
     <label for="mNome">Nome</label><input id="mNome" value="${esc(e.nome)}" required>
+    <label for="mLogo">Logo do escritório (PNG, JPG ou SVG, até 2 MB)</label>
+    <div class="row" style="align-items:center;gap:12px"><img id="mLogoPrev" src="${esc(e.logo_url || "")}" alt="" style="height:56px;max-width:160px;object-fit:contain;border:1px solid #e3e6e1;border-radius:8px;padding:4px;background:#fff${e.logo_url ? "" : ";display:none"}"><input id="mLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"></div>
+    <p class="note" style="margin:2px 0 0">A logo aparece no topo, na tela de entrada dos clientes e no app instalado no celular. Ao escolher, a cor principal é sugerida a partir dela.</p>
     <label for="mCor">Cor principal</label><input id="mCor" type="color" value="${esc(e.cor)}" style="height:44px;padding:4px">
     <label for="mPrazo">Dia do prazo de envio (mês seguinte)</label><input id="mPrazo" type="number" min="1" max="28" value="${e.prazo_dia}">
     <h3 style="margin-top:16px">Pix para honorários</h3><p class="note" style="margin:2px 0 0">Usado para gerar o Pix copia e cola dos honorários.</p>
@@ -471,8 +495,16 @@ async function vMarca(c) {
     ${S.suporte ? "" : `<div class="card" style="max-width:560px"><h2>Suporte Dabar</h2><p class="note">A equipe da Dabar só consegue ver o seu ambiente quando você autoriza, por tempo limitado. Cada entrada fica registrada aqui.</p>
     <p id="supSt"></p><div class="row"><button class="btn sm" data-sup="24" type="button">Autorizar por 24 horas</button><button class="btn sec sm" data-sup="168" type="button">Autorizar por 7 dias</button><button class="btn red sm" data-sup="0" type="button">Revogar</button></div>
     <h3 style="margin-top:14px">Registro</h3><ul class="lst" id="supLog"></ul></div>`}`;
+  let logoNovo = null;
+  $("#mLogo").onchange = async () => { const f = $("#mLogo").files[0]; if (!f) return; if (f.size > 2 * 1024 * 1024) { aviso("A logo passa de 2 MB.", false); $("#mLogo").value = ""; return; }
+    logoNovo = f; const u = URL.createObjectURL(f); const p = $("#mLogoPrev"); p.src = u; p.style.display = "";
+    try { const cor = await corDaLogo(u); if (cor) $("#mCor").value = cor; } catch { /* ok */ } };
   $("#fMarca").onsubmit = async (ev) => { ev.preventDefault();
-    const up = { nome: $("#mNome").value.trim(), cor: $("#mCor").value, prazo_dia: Math.min(28, Math.max(1, +$("#mPrazo").value || 10)), pix_chave: $("#mPixC").value.trim() || null, pix_nome: $("#mPixN").value.trim() || null, pix_cidade: $("#mPixCi").value.trim() || null };
+    let logo_url = e.logo_url || null;
+    if (logoNovo) { const ext = (logoNovo.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z]/g, "") || "png"; const path = `${e.id}/logo-${Date.now()}.${ext}`;
+      const { error: eu } = await sb.storage.from("wl-marca").upload(path, logoNovo, { upsert: true, contentType: logoNovo.type || undefined }); if (eu) return aviso("Não foi possível enviar a logo.", false);
+      logo_url = sb.storage.from("wl-marca").getPublicUrl(path).data.publicUrl; }
+    const up = { nome: $("#mNome").value.trim(), cor: $("#mCor").value, prazo_dia: Math.min(28, Math.max(1, +$("#mPrazo").value || 10)), pix_chave: $("#mPixC").value.trim() || null, pix_nome: $("#mPixN").value.trim() || null, pix_cidade: $("#mPixCi").value.trim() || null, logo_url };
     const { error } = await sb.from("wl_escritorios").update(up).eq("id", e.id); if (error) return aviso("Não foi possível salvar.", false);
     Object.assign(S.esc, up); aplicarMarca(S.esc); aviso("Dados salvos."); };
   if (S.suporte) return;
@@ -1162,8 +1194,14 @@ let promptInstalar = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); promptInstalar = e; const b = $("#bInst"); if (b) b.classList.remove("hide"); });
 function marcaApp(m, slug) {
   const set = (sel, attr, v) => { let el = document.querySelector(sel); if (el) el.setAttribute(attr, v); };
-  if (slug) set("#lnkMan", "href", "m/" + slug + ".webmanifest"); else set("#lnkMan", "href", "m/dabar.webmanifest");
-  set("#lnkApple", "href", slug ? "m/" + slug + "-180.png" : "dabar-icon.png");
+  const fixo = !slug || slug === "viaverde";
+  if (fixo) { set("#lnkMan", "href", slug ? "m/" + slug + ".webmanifest" : "m/dabar.webmanifest"); set("#lnkApple", "href", slug ? "m/" + slug + "-180.png" : "dabar-icon.png"); }
+  else if (m && m.logo_url) {
+    const base = location.origin + location.pathname, ic = new URL(m.logo_url, base).href;
+    const man = { name: m.nome, short_name: (m.nome || "Portal").split(" ")[0], start_url: base + "?e=" + slug, scope: base, display: "standalone", background_color: "#ffffff", theme_color: m.cor || "#4F5D33",
+      icons: [{ src: ic, sizes: "192x192", type: "image/png", purpose: "any" }, { src: ic, sizes: "512x512", type: "image/png", purpose: "any" }] };
+    set("#lnkMan", "href", "data:application/manifest+json," + encodeURIComponent(JSON.stringify(man))); set("#lnkApple", "href", ic);
+  }
   set("#mtApp", "content", m && m.nome ? m.nome.split(" ")[0] : "Dabar");
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
   const b = $("#bInst"); if (b && ios) b.classList.remove("hide");
