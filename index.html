@@ -457,8 +457,8 @@ async function vLista(c) {
   (async () => {
     const { data: ob } = await sb.from("wl_obrigacoes").select("id, nome, departamento, dia, mes_offset, meses, ativo").eq("escritorio", S.esc.id).order("departamento").order("nome");
     const ids = (ob || []).map((o) => o.id); const [{ data: vs }, cls] = await Promise.all([ids.length ? sb.from("wl_obrig_vinculo").select("obrigacao, cliente").in("obrigacao", ids) : Promise.resolve({ data: [] }), carregarClientes()]);
-    const quem = (id) => (vs || []).filter((v) => v.obrigacao === id).map((v) => cls.find((x) => x.id === v.cliente)).filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome));
-    const n = (id) => (vs || []).filter((v) => v.obrigacao === id).length;
+    const quem = (id) => (vs || []).filter((v) => v.obrigacao === id).map((v) => cls.find((x) => x.id === v.cliente)).filter((x) => x && x.ativo).sort((a, b) => a.nome.localeCompare(b.nome));
+    const n = (id) => quem(id).length;
     const quando = (o) => (o.meses || []).length === 12 ? `todo mês · dia ${o.dia === 31 ? "último" : o.dia}` : (o.meses || []).length === 1 ? "anual" : (o.meses || []).length === 4 ? "trimestral" : `${(o.meses || []).length}x por ano`;
     const box = $("#lRot"); if (!box) return;
     box.innerHTML = `<div class="row sb" style="margin:18px 0 6px"><div><h2>Rotinas e obrigações recorrentes</h2><p class="note" style="margin:0">Tarefas que o escritório repete todo mês para cada cliente. Viram entregas com prazo e meta no calendário de <b>Obrigações</b>; marque quais clientes cada uma atende no Cadastro.</p></div><button class="btn sec" id="lObr" type="button">Abrir Obrigações</button></div>
@@ -583,6 +583,7 @@ async function vVital(c) {
 }
 
 /* ---------- utilidades fase 2 ---------- */
+const AJUDA = `<a href="#" data-ajuda="1">Qual usar?</a>`;
 const valorBR = (v) => { let s = String(v ?? "").trim().replace(/[R$\s]/g, ""); if (!s) return null; if (s.includes(",") || /^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); const n = Number(s); return isFinite(n) ? Math.round(n * 100) / 100 : null; };
 const valorTxt = (v) => { const n = valorBR(v); return n == null ? "" : n.toFixed(2).replace(".", ","); };
 const brl = (v) => v == null || v === "" ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -822,7 +823,8 @@ async function vObrig(c) {
   c.onclick = null;
   if (S.obrigVis === "cad") return vObrigCad(c, topo);
   const { data: ob } = await sb.from("wl_obrigacoes").select("*").eq("escritorio", S.esc.id).order("nome");
-  const { data: en } = await sb.from("wl_obrig_entrega").select("*").eq("escritorio", S.esc.id).eq("competencia", S.comp).order("vencimento");
+  const { data: en0 } = await sb.from("wl_obrig_entrega").select("*").eq("escritorio", S.esc.id).eq("competencia", S.comp).order("vencimento");
+  const en = (en0 || []).filter((x) => (S.clientes.find((y) => y.id === x.cliente) || {}).ativo !== false);
   const oids = (ob || []).map((o) => o.id);
   const { data: vsr } = oids.length ? await sb.from("wl_obrig_vinculo").select("*").in("obrigacao", oids) : { data: [] };
   (en || []).forEach((x) => { const v = (vsr || []).find((y) => y.obrigacao === x.obrigacao && y.cliente === x.cliente); x.responsavel_v = v && v.responsavel; });
@@ -832,10 +834,10 @@ async function vObrig(c) {
   const cnt = (k) => (en || []).filter((x) => cor(x) === k).length;
   const nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "—";
   const fo = S.fObrig || "";
-  const grupos = (ob || []).map((o) => ({ o, es: (en || []).filter((x) => x.obrigacao === o.id && (!fo || cor(x) === fo)) })).filter((g) => g.es.length);
+  const grupos = (ob || []).map((o) => ({ o, es: (en || []).filter((x) => x.obrigacao === o.id && (!fo || cor(x) === fo)) })).filter((g) => g.es.length).sort((a, b) => (a.es[0].vencimento || "").localeCompare(b.es[0].vencimento || "") || a.o.nome.localeCompare(b.o.nome, "pt"));
   c.innerHTML = topo + `<div class="row" style="margin-bottom:12px"><label for="oComp" style="margin:0">Competência</label><input id="oComp" type="month" value="${S.comp}" style="width:auto"><button class="btn ghost sm" id="oGerar" type="button">Gerar entregas do mês</button></div>
     <div class="kpis">${Object.keys(leg).map((k) => `<button type="button" class="kpi" data-ofil="${k}" aria-pressed="${fo === k}" title="Mostrar só: ${leg[k]}"><b>${cnt(k)}</b><span><i class="dot ${k}"></i> ${leg[k]}</span></button>`).join("")}</div>
-    ${fo ? `<p class="note" style="margin:8px 0">Mostrando só: <b>${leg[fo]}</b> · <a href="#" data-ofil="">mostrar todas</a></p>` : '<p class="note" style="margin:8px 0">Toque num quadro acima para filtrar.</p>'}
+    ${fo ? `<p class="note" style="margin:8px 0">Mostrando só: <b>${leg[fo]}</b> · <a href="#" data-ofil="">mostrar todas</a></p>` : '<p class="note" style="margin:8px 0">Em ordem de vencimento: o que vence primeiro aparece em cima. Toque num quadro acima para filtrar.</p>'}
     ${grupos.length ? grupos.map(({ o, es }) => `<div class="card tw"><div class="row sb"><h3>${esc(o.nome)}</h3><span class="note">vence dia ${o.dia} · meta ${o.meta_dias} dia(s) útil(eis) antes</span></div>
       <table class="cal" style="margin-top:6px"><thead><tr><th><input type="checkbox" data-todos="${o.id}" aria-label="Selecionar todos"></th><th>Cliente</th><th class="c">Situação</th><th class="hm">Meta</th><th>Vencimento</th><th class="hm">Responsável</th><th></th></tr></thead><tbody>
       ${es.map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${linkCli(x.cliente, nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
@@ -875,7 +877,7 @@ async function vObrigCad(c, topo) {
   c.innerHTML = topo + `<div class="row sb" style="margin-bottom:10px"><p class="note" style="margin:0">Cadastre cada obrigação uma vez e marque os clientes que têm essa obrigação. As entregas são geradas todo dia, sozinhas.</p><button class="btn" id="oNova" type="button">+ Obrigação</button></div>
     <div class="card tw">${(ob || []).length ? `<table><thead><tr><th>Obrigação</th><th>Vencimento</th><th class="hm">Meses</th><th class="hm">Meta</th><th>Clientes</th><th></th></tr></thead><tbody>
     ${ob.map((o) => `<tr><td><b>${esc(o.nome)}</b>${o.departamento ? `<div class="note">${esc(o.departamento)}</div>` : ""}${o.ativo ? "" : ' <span class="chip st-pendente">Inativa</span>'}</td><td>dia ${o.dia} ${o.mes_offset === 0 ? "do mesmo mês" : o.mes_offset === 1 ? "do mês seguinte" : `+${o.mes_offset} meses`}<div class="note">${o.nao_util === "antecipa" ? "antecipa" : "posterga"} se não for dia útil</div></td>
-      <td class="hm note">${o.meses.length === 12 ? "todos" : o.meses.map((m) => MS[m - 1]).join(", ")}</td><td class="hm">${o.meta_dias} dia(s) útil(eis)</td><td>${(vs || []).filter((v) => v.obrigacao === o.id).length}</td>
+      <td class="hm note">${o.meses.length === 12 ? "todos" : o.meses.map((m) => MS[m - 1]).join(", ")}</td><td class="hm">${o.meta_dias} dia(s) útil(eis)</td><td>${(vs || []).filter((v) => v.obrigacao === o.id && (S.clientes.find((x) => x.id === v.cliente) || {}).ativo).length}</td>
       <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-vinc="${o.id}" type="button">Clientes</button> <button class="btn ghost sm" data-ed="${o.id}" type="button">Editar</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Nenhuma obrigação cadastrada.</div>'}</div>`;
   const form = async (o = {}) => {
     const r = await dialogo(o.id ? "Editar obrigação" : "Nova obrigação", [
@@ -924,7 +926,7 @@ async function vQuadro(c) {
   const { data: ts0 } = await sb.from("wl_tarefas").select("*").eq("escritorio", S.esc.id).eq("arquivada", false).order("ordem").order("id");
   const ts = (ts0 || []).filter((t) => (!f.resp || (f.resp === "eu" ? t.responsavel === S.user.id : t.responsavel === f.resp)) && (!f.cli || t.cliente === f.cli));
   const hj = hojeISO(), nomeCli = (id) => (S.clientes.find((x) => x.id === id) || {}).nome || "";
-  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><h2>Tarefas</h2><div class="row">
+  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Tarefas</h2><p class="note" style="margin:0">Coisas <b>avulsas</b> do dia a dia, um cartão por assunto. ${AJUDA}</p></div><div class="row">
     <select id="tResp" style="width:auto"><option value="">Todos</option><option value="eu" ${f.resp === "eu" ? "selected" : ""}>Minhas</option>${S.equipe.map((m) => `<option value="${m.user_id}" ${f.resp === m.user_id ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select>
     <select id="tCli" style="width:auto"><option value="">Todos os clientes</option>${S.clientes.map((x) => `<option value="${x.id}" ${f.cli === x.id ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>
     <button class="btn" id="tNova" type="button">+ Tarefa</button></div></div>
@@ -1128,6 +1130,17 @@ async function lancarHonorarios() {
 }
 
 /* ---------- processos ---------- */
+document.addEventListener("click", (e) => { const a = e.target.closest("[data-ajuda]"); if (!a) return; e.preventDefault();
+  const d = $("#dlg"), f = $("#dlgF");
+  f.innerHTML = `<h2>Onde colocar cada coisa</h2>
+  <div style="display:grid;gap:10px">
+  <p style="margin:0"><b>📅 Obrigações</b> — o que tem <b>vencimento fixo</b> todo mês ou ano (DAS, DCTFWeb, folha, ECD…). Cadastre uma vez, marque os clientes e o sistema cria as entregas de cada mês sozinho, em ordem de vencimento.</p>
+  <p style="margin:0"><b>📄 Documentos do mês</b> — a <b>cobrança do que o cliente precisa mandar</b> (extratos, notas, folha…). O portal pede e lembra o cliente sozinho; você só confere o que chegou.</p>
+  <p style="margin:0"><b>🔁 Processos</b> — trabalhos <b>em etapas que se repetem</b>: onboarding de cliente novo, abertura de empresa, admissão, IRPF. Cada etapa vira tarefa no quadro e a próxima abre quando a anterior é concluída.</p>
+  <p style="margin:0"><b>✅ Tarefas</b> — o que é <b>avulso</b> e não se repete: "pedir procuração do cliente X", "ligar para o banco". Se você está esperando o cliente, mova para <b>Aguardando</b>.</p>
+  <p class="note" style="margin:0">Regra rápida: tem vencimento oficial → Obrigações. Depende de arquivo do cliente → Documentos do mês. Tem passo 1, 2, 3 que sempre se repete → Processos. O resto → Tarefas.</p></div>
+  <div class="dlgft"><button class="btn" value="x">Entendi</button></div>`;
+  d.showModal(); });
 async function vProc(c) {
   await Promise.all([carregarClientes(), carregarEquipe()]);
   S.procVis = S.procVis || "lista";
@@ -1155,7 +1168,7 @@ async function vProc(c) {
       ${lista.map((p) => { const es = etapas(p), a = atual(p), f = es.filter((e) => e.status === "feito").length; return `<tr data-p="${p.id}" style="cursor:pointer"><td><b>${esc(p.nome)}</b></td><td>${esc(nomeCli(p.cliente))}</td><td>${a ? esc(a.titulo) : "—"}${a && a.responsavel ? `<div class="note">${esc(nomeEquipe(a.responsavel))}</div>` : ""}</td>
         <td class="hm"><div class="row" style="gap:6px;flex-wrap:nowrap"><div class="bar" style="flex:1"><i style="width:${es.length ? Math.round(100 * f / es.length) : 0}%"></i></div><span class="note">${f}/${es.length}</span></div></td><td class="hm">${a && a.prazo ? (a.prazo < hj ? `<span class="chip st-recusado">${dataBR(a.prazo)}</span>` : dataBR(a.prazo)) : "—"}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Nenhum processo em andamento. Toque em <b>Iniciar processo</b>.</div>'}</div>`;
   }
-  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Processos</h2><p class="note" style="margin:0">Abertura de empresa, admissão, IRPF e outros fluxos em etapas, com tarefas automáticas no quadro.</p></div>
+  c.innerHTML = `<div class="row sb" style="margin-bottom:12px"><div><h2>Processos</h2><p class="note" style="margin:0">Trabalho em <b>etapas que se repete</b> (onboarding de cliente, abertura de empresa, admissão, IRPF…). Você monta o modelo uma vez; ao iniciar para um cliente, cada etapa vira uma tarefa no quadro e a próxima abre sozinha. ${AJUDA}</p></div>
     <div class="row"><button class="btn ${S.procVis === "lista" ? "" : "ghost"} sm" data-vis="lista" type="button">Lista</button><button class="btn ${S.procVis === "quadro" ? "" : "ghost"} sm" data-vis="quadro" type="button">Quadro por etapa</button><button class="btn ${S.procVis === "modelos" ? "" : "ghost"} sm" data-vis="modelos" type="button">Modelos</button><button class="btn sm" id="prNovo" type="button">+ Iniciar processo</button></div></div>
     ${S.procVis !== "modelos" ? `<div class="row" style="margin-bottom:10px"><select id="prMod" style="width:auto"><option value="">${S.procVis === "quadro" ? "Escolha o processo…" : "Todos os processos"}</option>${(ms || []).map((m) => `<option value="${m.id}" ${String(m.id) === fm ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>` : ""}
     ${S.procVis === "quadro" && !fm ? '<div class="card empty">Escolha um processo (ex.: Declaração de IRPF) para ver as declarações por etapa.</div>' : corpo}`;
