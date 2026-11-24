@@ -810,17 +810,19 @@ async function editarParcelamento(pc, cls) {
     { k: "total", rot: "Valor total consolidado (R$, opcional)", tipo: "dinheiro", v: pc ? valorTxt(pc.valor_total) : "" },
     { k: "qtd", rot: "Quantidade de parcelas", tipo: "number", v: pc ? String(pc.qtd_parcelas) : "" },
     { k: "vparc", rot: "Valor da parcela (R$)", tipo: "dinheiro", v: pc ? valorTxt(pc.valor_parcela) : "" },
-    { k: "comp", rot: "Competência da 1ª parcela", tipo: "month", v: pc ? pc.primeira_comp : S.comp },
+    { k: "comp", rot: novo ? "Competência da próxima parcela a pagar (a primeira em aberto)" : "Competência da 1ª parcela", tipo: "month", v: pc ? pc.primeira_comp : S.comp },
     { k: "dia", rot: "Dia do vencimento (o último dia útil fica a seu critério: use 30 para fim do mês)", tipo: "number", v: pc ? String(pc.dia_venc) : "30" },
-    { k: "pagas", rot: novo ? "Parcelas já pagas antes de cadastrar (ex.: 12)" : "Parcelas pagas (não muda as já marcadas)", tipo: "number", v: novo ? "0" : "" },
+    novo && { k: "pagas", rot: "Parcelas já pagas antes dessa competência (ex.: 2 → a parcela do mês acima é a 3ª)", tipo: "number", v: "0" }, 
     { k: "selic", rot: "O valor da parcela muda todo mês?", tipo: "select", ops: [["nao", "Não, valor fixo"], ["sim", "Sim, corrigido pela SELIC (confere na guia)"]], v: pc && pc.atualiza_selic ? "sim" : "nao" },
     { k: "situacao", rot: "Situação", tipo: "select", ops: [["ativo", "Ativo"], ["suspenso", "Suspenso"], ["quitado", "Quitado"], ["rescindido", "Rescindido"]], v: pc ? pc.situacao : "ativo" },
     { k: "obs", rot: "Observação", tipo: "area", v: pc ? pc.obs : "" }];
   if (!novo) campos.push({ tipo: "info", texto: "Para excluir o parcelamento, apague o número de parcelas e salve." });
-  const r = await dialogo(novo ? "Novo parcelamento" : "Editar parcelamento", campos); if (!r) return;
+  const r = await dialogo(novo ? "Novo parcelamento" : "Editar parcelamento", campos.filter(Boolean)); if (!r) return;
   if (!novo && !r.qtd) { if (await confirmar("Excluir este parcelamento e todas as parcelas dele?")) { await sb.from("wl_parcelamentos").delete().eq("id", pc.id); aviso("Parcelamento excluído."); render(); } return; }
   const qtd = parseInt(r.qtd, 10), dia = Math.min(31, Math.max(1, parseInt(r.dia, 10) || 30)), vp = valorBR(r.vparc);
   if (!r.cliente || !qtd || !r.comp) return aviso("Informe cliente, quantidade de parcelas e a competência da 1ª parcela.", false);
+  const pagas = novo ? Math.max(0, Math.min(qtd - 1, parseInt(r.pagas, 10) || 0)) : 0;
+  if (novo && pagas) r.comp = addMes(r.comp, -pagas); // as parcelas já pagas ficam nos meses anteriores
   const reg = { escritorio: S.esc.id, cliente: r.cliente, orgao: r.orgao, modalidade: r.modalidade || null, numero: r.numero || null, tributos: r.tributos || null, valor_total: valorBR(r.total), qtd_parcelas: qtd, valor_parcela: vp, primeira_comp: r.comp, dia_venc: dia, atualiza_selic: r.selic === "sim", situacao: r.situacao, obs: r.obs || null };
   let id = pc && pc.id;
   if (novo) { const { data, error } = await sb.from("wl_parcelamentos").insert(reg).select("id").single(); if (error) return aviso("Não foi possível salvar: " + error.message, false); id = data.id; }
@@ -828,7 +830,6 @@ async function editarParcelamento(pc, cls) {
   // gera (ou completa) as parcelas; não mexe nas já pagas
   const { data: exist } = await sb.from("wl_parcelas").select("id, num, paga_em, valor").eq("parcelamento", id);
   const porNum = {}; (exist || []).forEach((p) => porNum[p.num] = p);
-  const pagas = novo ? Math.max(0, Math.min(qtd, parseInt(r.pagas, 10) || 0)) : 0;
   const ins = [], upd = [];
   for (let n = 1; n <= qtd; n++) { const comp = addMes(r.comp, n - 1), venc = vencDe(comp, dia), e = porNum[n];
     if (!e) ins.push({ parcelamento: id, escritorio: S.esc.id, cliente: r.cliente, num: n, competencia: comp, vencimento: venc, valor: vp, paga_em: n <= pagas ? venc : null });
