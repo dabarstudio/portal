@@ -769,7 +769,7 @@ async function vParc(c) {
     ${f.vis === "mes" ? `<div class="card tw"><div class="row sb"><h3 style="margin:0">Parcelas de ${compBR(S.comp)}</h3>${doMes.some((p) => !p.enviada_em && !parcPaga(p)) ? `<button class="btn sec sm" id="pEnvTodas" type="button">Marcar todas como enviadas</button>` : ""}</div>${doMes.length ? `<table><thead><tr><th>Cliente</th><th>Parcelamento</th><th>Parcela</th><th class="hm">Vencimento</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>
       ${doMes.sort((a, b) => nomeCli(a.cliente).localeCompare(nomeCli(b.cliente)) || a.vencimento.localeCompare(b.vencimento)).map((p) => { const pc = pcMap[p.parcelamento], st = situacaoParcela(p, hj);
         return `<tr><td><b>${esc(nomeCli(p.cliente))}</b></td><td>${esc(nomePc(pc))}</td><td>${p.num}/${pc.qtd_parcelas}</td><td class="hm">${dataBR(p.vencimento)}</td><td>${brl(p.valor)}${pc.atualiza_selic ? ' <span class="note" title="O valor da parcela muda todo mês (SELIC). Confira na guia.">+SELIC</span>' : ""}</td><td><span class="chip ${st[1]}">${st[0]}</span></td>
-        <td style="text-align:right;white-space:nowrap">${p._guia && p._guia.id ? `<button class="btn ghost sm" data-vg="${p.cliente}" type="button">Guia</button> ` : ""}${parcPaga(p) ? `<button class="btn ghost sm" data-despaga="${p.id}" type="button">Desfazer</button>` : `${p.enviada_em ? `<button class="btn ghost sm" data-desenv="${p.id}" type="button" title="Desmarcar envio">✓ Enviada</button>` : `<button class="btn sec sm" data-env="${p.id}" type="button">Enviada</button>`} <button class="btn sec sm" data-paga="${p.id}" type="button">Paga</button>`} <button class="btn ghost sm" data-edpar="${p.id}" type="button">Editar</button></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">Nenhuma parcela nesta competência${f.cli || f.org ? " com esses filtros" : ""}.</div>`}</div>` : ""}
+        <td style="text-align:right;white-space:nowrap">${p._guia && p._guia.id ? `<button class="btn ghost sm" data-vg="${p.cliente}" type="button">Guia</button> ` : ""}${parcPaga(p) ? `<button class="btn ghost sm" data-despaga="${p.id}" type="button">Desfazer</button>` : `${p.enviada_em ? `<button class="btn ghost sm" data-desenv="${p.id}" type="button" title="Desmarcar envio">✓ Enviada</button>` : `<button class="btn sec sm" data-env="${p.id}" type="button">Enviada</button>`} <button class="btn sec sm" data-paga="${p.id}" type="button">Paga</button>`} <button class="btn ghost sm" data-edpar="${p.id}" type="button">Editar parcela</button> <button class="btn ghost sm" data-edpc="${pc.id}" type="button">Editar parcelamento</button> <button class="btn ghost sm" data-delpc="${pc.id}" type="button" style="color:var(--err)" title="Excluir parcelamento">🗑</button></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">Nenhuma parcela nesta competência${f.cli || f.org ? " com esses filtros" : ""}.</div>`}</div>` : ""}
     ${f.vis !== "mes" ? `<div class="card tw"><h3>${f.vis === "enc" ? "Parcelamentos quitados e rescindidos" : "Parcelamentos ativos por cliente"}</h3>${(() => { const L = (pcs || []).filter((p) => filtra(p) && (f.vis === "enc" ? ["quitado", "rescindido"].includes(p.situacao) : ["ativo", "suspenso"].includes(p.situacao)));
       if (!L.length) return '<div class="empty">Nenhum parcelamento aqui.</div>';
       return `<table><thead><tr><th>Cliente</th><th>Parcelamento</th><th>Pagas</th><th class="hm">Próxima</th><th class="hm">Saldo</th><th>Situação</th><th></th></tr></thead><tbody>${L.sort((a, b) => nomeCli(a.cliente).localeCompare(nomeCli(b.cliente))).map((pc) => {
@@ -778,7 +778,7 @@ async function vParc(c) {
         return `<tr><td><b>${esc(nomeCli(pc.cliente))}</b></td><td>${esc(nomePc(pc))}${pc.tributos ? `<div class="note">${esc(pc.tributos)}</div>` : ""}</td>
           <td><div style="min-width:90px">${pg}/${pc.qtd_parcelas}<div style="height:6px;background:var(--ln);border-radius:9px;margin-top:4px"><div style="height:6px;width:${pct}%;background:var(--ok);border-radius:9px"></div></div></div></td>
           <td class="hm">${prox ? `${prox.num}ª · ${compBR(prox.competencia)}<div class="note">${brl(prox.valor)}</div>` : "—"}</td><td class="hm">${brl(saldo(pc))}</td><td><span class="chip ${sit[1]}">${esc(sit[0])}</span></td>
-          <td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" data-edpc="${pc.id}" type="button">Editar</button></td></tr>`; }).join("")}</tbody></table>`; })()}</div>` : ""}
+          <td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" data-edpc="${pc.id}" type="button">Editar</button> <button class="btn ghost sm" data-delpc="${pc.id}" type="button" style="color:var(--err)">Excluir</button></td></tr>`; }).join("")}</tbody></table>`; })()}</div>` : ""}
     <p class="note">Regra geral da Receita e da PGFN: o parcelamento pode ser rescindido com 3 parcelas seguidas ou 6 alternadas em atraso (confira as regras de cada modalidade). O aviso de risco aparece a partir de 2 seguidas ou 5 alternadas.</p>`;
   $("#pComp").onchange = (e) => { if (e.target.value) { S.comp = e.target.value; render(); } };
   $("#pCli").onchange = (e) => { f.cli = e.target.value; render(); };
@@ -795,12 +795,17 @@ async function vParc(c) {
     if (t.dataset.despaga) { await sb.from("wl_parcelas").update({ paga_em: null }).eq("id", +t.dataset.despaga); return render(); }
     if (t.dataset.vg) { S.fGuia = { cli: t.dataset.vg, sit: "todas", cat: "imposto" }; return irPara("guias"); }
     if (t.dataset.edpc) return editarParcelamento(pcMap[+t.dataset.edpc], cls);
+    if (t.dataset.delpc) { const pc = pcMap[+t.dataset.delpc]; if (!pc) return; if (!(await confirmar(`Excluir o parcelamento ${nomePc(pc)} de ${nomeCli(pc.cliente)} e todas as ${pc.qtd_parcelas} parcelas? Não dá para desfazer.`))) return;
+      const { error } = await sb.from("wl_parcelamentos").delete().eq("id", pc.id); if (error) return aviso("Não foi possível excluir: " + error.message, false); aviso("Parcelamento excluído."); return render(); }
     if (t.dataset.edpar) { const p = ps.find((x) => x.id === +t.dataset.edpar); const r = await dialogo(`Parcela ${p.num} · ${nomeCli(p.cliente)}`, [{ k: "valor", rot: "Valor da parcela (R$)", tipo: "dinheiro", v: valorTxt(p.valor) }, { k: "venc", rot: "Vencimento", tipo: "date", v: p.vencimento }, { k: "env", rot: "Enviada ao cliente em (deixe vazio se não foi enviada)", tipo: "date", v: p.enviada_em ? p.enviada_em.slice(0, 10) : "" }, { k: "paga", rot: "Paga em (deixe vazio se não foi paga)", tipo: "date", v: p.paga_em || "" }, { k: "obs", rot: "Observação", tipo: "area", v: p.obs || "" }]);
       if (!r) return; const { error } = await sb.from("wl_parcelas").update({ valor: valorBR(r.valor), vencimento: r.venc || p.vencimento, enviada_em: r.env ? (p.enviada_em && p.enviada_em.slice(0, 10) === r.env ? p.enviada_em : r.env + "T12:00:00") : null, paga_em: r.paga || null, obs: r.obs || null }).eq("id", p.id); if (error) return aviso("Não foi possível salvar: " + error.message, false); render(); }
   };
 }
 async function editarParcelamento(pc, cls) {
   const novo = !pc; cls = cls.filter((x) => x.ativo || (pc && x.id === pc.cliente));
+  let pagasAt = 0, proxComp = S.comp, exist0 = [];
+  if (pc) { const { data } = await sb.from("wl_parcelas").select("id, num, competencia, paga_em").eq("parcelamento", pc.id).order("num"); exist0 = data || [];
+    pagasAt = exist0.filter((p) => p.paga_em).length; const px = exist0.find((p) => !p.paga_em); proxComp = px ? px.competencia : addMes(pc.primeira_comp, pagasAt); }
   const campos = [
     { k: "cliente", rot: "Cliente", tipo: "select", ops: [["", "Escolha o cliente"]].concat(cls.map((x) => [x.id, x.nome])), v: pc ? pc.cliente : (S.fParc && S.fParc.cli) || "" },
     { k: "orgao", rot: "Órgão", tipo: "select", ops: ORGAOS.map((o) => [o, o]), v: pc ? pc.orgao : ORGAOS[0] },
@@ -810,33 +815,32 @@ async function editarParcelamento(pc, cls) {
     { k: "total", rot: "Valor total consolidado (R$, opcional)", tipo: "dinheiro", v: pc ? valorTxt(pc.valor_total) : "" },
     { k: "qtd", rot: "Quantidade de parcelas", tipo: "number", v: pc ? String(pc.qtd_parcelas) : "" },
     { k: "vparc", rot: "Valor da parcela (R$)", tipo: "dinheiro", v: pc ? valorTxt(pc.valor_parcela) : "" },
-    { k: "comp", rot: novo ? "Competência da próxima parcela a pagar (a primeira em aberto)" : "Competência da 1ª parcela", tipo: "month", v: pc ? pc.primeira_comp : S.comp },
+    { k: "comp", rot: "Competência da próxima parcela a pagar (a primeira em aberto)", tipo: "month", v: proxComp },
     { k: "dia", rot: "Dia do vencimento (o último dia útil fica a seu critério: use 30 para fim do mês)", tipo: "number", v: pc ? String(pc.dia_venc) : "30" },
-    novo && { k: "pagas", rot: "Parcelas já pagas antes dessa competência (ex.: 2 → a parcela do mês acima é a 3ª)", tipo: "number", v: "0" }, 
+    { k: "pagas", rot: "Parcelas já pagas antes dessa competência (ex.: 2 → a parcela do mês acima é a 3ª)", tipo: "number", v: String(pagasAt) }, 
     { k: "selic", rot: "O valor da parcela muda todo mês?", tipo: "select", ops: [["nao", "Não, valor fixo"], ["sim", "Sim, corrigido pela SELIC (confere na guia)"]], v: pc && pc.atualiza_selic ? "sim" : "nao" },
     { k: "situacao", rot: "Situação", tipo: "select", ops: [["ativo", "Ativo"], ["suspenso", "Suspenso"], ["quitado", "Quitado"], ["rescindido", "Rescindido"]], v: pc ? pc.situacao : "ativo" },
     { k: "obs", rot: "Observação", tipo: "area", v: pc ? pc.obs : "" }];
-  if (!novo) campos.push({ tipo: "info", texto: "Para excluir o parcelamento, apague o número de parcelas e salve." });
+  if (!novo) campos.push({ tipo: "info", texto: "Ao salvar, as parcelas são refeitas com os dados acima: as já pagas ficam nos meses anteriores e as demais seguem mês a mês. Para apagar o parcelamento, use o botão Excluir na lista." });
   const r = await dialogo(novo ? "Novo parcelamento" : "Editar parcelamento", campos.filter(Boolean)); if (!r) return;
-  if (!novo && !r.qtd) { if (await confirmar("Excluir este parcelamento e todas as parcelas dele?")) { await sb.from("wl_parcelamentos").delete().eq("id", pc.id); aviso("Parcelamento excluído."); render(); } return; }
   const qtd = parseInt(r.qtd, 10), dia = Math.min(31, Math.max(1, parseInt(r.dia, 10) || 30)), vp = valorBR(r.vparc);
   if (!r.cliente || !qtd || !r.comp) return aviso("Informe cliente, quantidade de parcelas e a competência da 1ª parcela.", false);
-  const pagas = novo ? Math.max(0, Math.min(qtd - 1, parseInt(r.pagas, 10) || 0)) : 0;
-  if (novo && pagas) r.comp = addMes(r.comp, -pagas); // as parcelas já pagas ficam nos meses anteriores
+  const pagas = Math.max(0, Math.min(novo ? qtd - 1 : qtd, parseInt(r.pagas, 10) || 0));
+  if (pagas) r.comp = addMes(r.comp, -pagas); // as parcelas já pagas ficam nos meses anteriores
   const reg = { escritorio: S.esc.id, cliente: r.cliente, orgao: r.orgao, modalidade: r.modalidade || null, numero: r.numero || null, tributos: r.tributos || null, valor_total: valorBR(r.total), qtd_parcelas: qtd, valor_parcela: vp, primeira_comp: r.comp, dia_venc: dia, atualiza_selic: r.selic === "sim", situacao: r.situacao, obs: r.obs || null };
   let id = pc && pc.id;
   if (novo) { const { data, error } = await sb.from("wl_parcelamentos").insert(reg).select("id").single(); if (error) return aviso("Não foi possível salvar: " + error.message, false); id = data.id; }
   else { const { error } = await sb.from("wl_parcelamentos").update(reg).eq("id", id); if (error) return aviso("Não foi possível salvar: " + error.message, false); }
-  // gera (ou completa) as parcelas; não mexe nas já pagas
+  // gera ou refaz as parcelas conforme os dados (pagas = as primeiras N)
   const { data: exist } = await sb.from("wl_parcelas").select("id, num, paga_em, valor").eq("parcelamento", id);
   const porNum = {}; (exist || []).forEach((p) => porNum[p.num] = p);
   const ins = [], upd = [];
-  for (let n = 1; n <= qtd; n++) { const comp = addMes(r.comp, n - 1), venc = vencDe(comp, dia), e = porNum[n];
-    if (!e) ins.push({ parcelamento: id, escritorio: S.esc.id, cliente: r.cliente, num: n, competencia: comp, vencimento: venc, valor: vp, paga_em: n <= pagas ? venc : null });
-    else if (!e.paga_em) upd.push({ id: e.id, competencia: comp, vencimento: venc, valor: pc && e.valor != null && Number(e.valor) !== Number(pc.valor_parcela) ? e.valor : vp, cliente: r.cliente }); }
-  const sobra = (exist || []).filter((p) => p.num > qtd && !p.paga_em).map((p) => p.id);
+  for (let n = 1; n <= qtd; n++) { const comp = addMes(r.comp, n - 1), venc = vencDe(comp, dia), e = porNum[n], paga = n <= pagas;
+    if (!e) ins.push({ parcelamento: id, escritorio: S.esc.id, cliente: r.cliente, num: n, competencia: comp, vencimento: venc, valor: vp, paga_em: paga ? venc : null });
+    else upd.push({ id: e.id, competencia: comp, vencimento: venc, valor: pc && e.valor != null && Number(e.valor) !== Number(pc.valor_parcela) ? e.valor : vp, cliente: r.cliente, paga_em: paga ? (e.paga_em || venc) : null }); }
+  const sobra = (exist || []).filter((p) => p.num > qtd).map((p) => p.id);
   if (ins.length) { const { error } = await sb.from("wl_parcelas").insert(ins); if (error) return aviso("Parcelamento salvo, mas as parcelas não: " + error.message, false); }
-  for (const u of upd) await sb.from("wl_parcelas").update({ competencia: u.competencia, vencimento: u.vencimento, valor: u.valor, cliente: u.cliente }).eq("id", u.id);
+  for (const u of upd) await sb.from("wl_parcelas").update({ competencia: u.competencia, vencimento: u.vencimento, valor: u.valor, cliente: u.cliente, paga_em: u.paga_em }).eq("id", u.id);
   if (sobra.length) await sb.from("wl_parcelas").delete().in("id", sobra);
   aviso(novo ? `Parcelamento cadastrado com ${qtd} parcelas${pagas ? ` (${pagas} já pagas)` : ""}.` : "Parcelamento atualizado."); render();
 }
