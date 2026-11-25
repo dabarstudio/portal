@@ -284,7 +284,9 @@ async function confirmar(txt) { const r = await dialogo("Confirmar", [{ tipo: "i
 function aviso(txt, ok = true) { const n = document.createElement("div"); n.textContent = txt; n.setAttribute("role", "status"); n.style.cssText = `position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:${ok ? "#1d2420" : "#b83a3a"};color:#fff;padding:10px 16px;border-radius:10px;z-index:99;font-size:.9rem;max-width:90vw`; document.body.appendChild(n); setTimeout(() => n.remove(), 3500); }
 
 /* ---------- dados comuns ---------- */
-async function carregarClientes() { const { data } = await sb.from("wl_clientes").select("*").eq("escritorio", S.esc.id).order("nome"); S.clientes = data || []; return S.clientes; }
+const abc = (a, b) => (a || "").localeCompare(b || "", "pt", { sensitivity: "base", numeric: true });
+const ordCli = (L) => (L || []).sort((a, b) => abc(a.nome, b.nome));
+async function carregarClientes() { const { data } = await sb.from("wl_clientes").select("*").eq("escritorio", S.esc.id).order("nome"); S.clientes = ordCli(data || []); return S.clientes; }
 async function abrirArquivo(path) { const { data, error } = await sb.storage.from("wl-docs").createSignedUrl(path, 300); if (error) return aviso("Não foi possível abrir o arquivo.", false); window.open(data.signedUrl, "_blank", "noopener"); }
 const nomeSeguro = (n) => n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9._-]+/g, "_").slice(-80);
 async function enviarArquivos(item, files) {
@@ -595,7 +597,7 @@ async function carregarEquipe() { const { data } = await sb.from("wl_membros").s
 const nomeEquipe = (u) => { const m = (S.equipe || []).find((x) => x.user_id === u); return m ? m.nome.split(" ")[0] : ""; };
 async function clientesDoUsuario() {
   const { data: lig } = await sb.from("wl_cliente_usuarios").select("cliente, wl_clientes(id, nome, escritorio)").eq("user_id", S.user.id);
-  return (lig || []).map((l) => l.wl_clientes).filter((x) => x && x.escritorio === S.esc.id);
+  return ordCli((lig || []).map((l) => l.wl_clientes).filter((x) => x && x.escritorio === S.esc.id));
 }
 async function subirArquivo(esc, cli, pasta, f) {
   if (f.size > 25 * 1024 * 1024) { aviso(`"${f.name}" passa de 25 MB.`, false); return null; }
@@ -689,6 +691,7 @@ async function vGuias(c) {
   const gs = (gs0 || []).filter((g) => f.sit === "todas" || (f.sit === "abertas" && !g.paga_em && !g.cancelada) || (f.sit === "pagas" && g.paga_em) || (f.sit === "vencidas" && !g.paga_em && !g.cancelada && g.vencimento < hj) || (f.sit === "recalculo" && g.recalculo_em && !g.paga_em)).filter((g) => !f.cat || g.categoria === f.cat);
   const honAtr = (gs0 || []).filter((g) => g.categoria === "honorario" && !g.paga_em && !g.cancelada && g.vencimento < hj);
   const nomeCli = (id) => (cls.find((x) => x.id === id) || {}).nome || "—";
+  gs.sort((a, b) => abc(nomeCli(a.cliente), nomeCli(b.cliente)) || (a.vencimento || "").localeCompare(b.vencimento || ""));
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><div><h2>Guias</h2><p class="note" style="margin:0">Envie os PDFs das guias: o robô lê o cliente, a competência, o vencimento e o valor. Você confere e envia.</p></div>
     <div class="row"><button class="btn sec" id="gHon" type="button">💰 Lançar honorários</button><label class="btn up" style="margin:0">📄 Enviar guias (PDF)<input type="file" id="gUp" accept="application/pdf,.pdf" multiple></label></div></div>
     ${honAtr.length ? `<div class="card" style="border-left:4px solid var(--err)"><b>Honorários em atraso: ${brl(honAtr.reduce((a, g) => a + Number(g.valor || 0), 0))}</b><div class="note">${[...new Set(honAtr.map((g) => g.cliente))].map((id) => esc(nomeCli(id))).join(" · ")}</div></div>` : ""}
@@ -755,7 +758,7 @@ async function vParc(c) {
   const emAtraso = ps.filter((p) => !parcPaga(p) && p.vencimento < hj && pcMap[p.parcelamento] && pcMap[p.parcelamento].situacao === "ativo" && filtra(pcMap[p.parcelamento]));
   const totMes = doMes0.reduce((a, p) => a + Number(p.valor || 0), 0);
   const saldo = (pc) => pc._ps.filter((p) => !parcPaga(p)).reduce((a, p) => a + Number(p.valor || pc.valor_parcela || 0), 0);
-  const porCliente = (L, k, fn) => { const g = {}; L.forEach((x) => (g[k(x)] = g[k(x)] || []).push(x)); return Object.keys(g).sort((a, b) => nomeCli(a).localeCompare(nomeCli(b))).map((cid) => fn(g[cid], cid)).join(""); };
+  const porCliente = (L, k, fn) => { const g = {}; L.forEach((x) => (g[k(x)] = g[k(x)] || []).push(x)); return Object.keys(g).sort((a, b) => abc(nomeCli(a), nomeCli(b))).map((cid) => fn(g[cid], cid)).join(""); };
   const nomePc = (pc) => [pc.orgao, pc.modalidade].filter(Boolean).join(" · ") + (pc.numero ? ` (nº ${pc.numero})` : "");
   c.innerHTML = `<div class="row sb" style="margin-bottom:14px"><div><h2>Parcelamentos</h2><p class="note" style="margin:0">Todos os parcelamentos ativos dos clientes, com as parcelas de cada competência. A guia enviada em <b>Guias</b> com o mesmo cliente e competência é ligada sozinha à parcela.</p></div>
     <div class="row"><button class="btn" id="pNovo" type="button">+ Novo parcelamento</button></div></div>
@@ -996,7 +999,7 @@ async function vObrig(c) {
     ${fo ? `<p class="note" style="margin:8px 0">Mostrando só: <b>${leg[fo]}</b> · <a href="#" data-ofil="">mostrar todas</a></p>` : '<p class="note" style="margin:8px 0">Em ordem de vencimento: o que vence primeiro aparece em cima. Toque num quadro acima para filtrar.</p>'}
     ${grupos.length ? grupos.map(({ o, es }) => `<div class="card tw"><div class="row sb"><h3>${esc(o.nome)}</h3><span class="note">vence dia ${o.dia} · meta ${o.meta_dias} dia(s) útil(eis) antes</span></div>
       <table class="cal" style="margin-top:6px"><thead><tr><th><input type="checkbox" data-todos="${o.id}" aria-label="Selecionar todos"></th><th>Cliente</th><th class="c">Situação</th><th class="hm">Meta</th><th>Vencimento</th><th class="hm">Responsável</th><th></th></tr></thead><tbody>
-      ${es.map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${linkCli(x.cliente, nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
+      ${es.sort((a, b) => abc(nomeCli(a.cliente), nomeCli(b.cliente))).map((x) => `<tr><td><input type="checkbox" data-sel="${x.id}" data-ob="${o.id}" ${x.status !== "aberta" ? "disabled" : ""}></td><td><b>${linkCli(x.cliente, nomeCli(x.cliente))}</b>${x.justificativa ? `<div class="note">${esc(x.justificativa)}</div>` : ""}</td>
         <td class="c"><span class="dot ${cor(x)}" title="${leg[cor(x)]}"></span></td><td class="hm">${dataBR(x.meta)}</td><td>${dataBR(x.vencimento)}</td><td class="hm">${esc(nomeEquipe(x.responsavel_v) || "")}</td>
         <td style="text-align:right;white-space:nowrap">${x.status === "aberta" ? `<button class="btn sm" data-ent="${x.id}" type="button">Entregue</button> <button class="btn ghost sm" data-sm="${x.id}" type="button">Sem movimento</button> <button class="btn ghost sm" data-tar="${x.id}" type="button">Tarefa</button>` : `<button class="btn ghost sm" data-reab="${x.id}" type="button">Reabrir</button>`}</td></tr>`).join("")}</tbody></table>
       <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn ghost sm" data-smlote="${o.id}" type="button">Baixa sem movimento nos marcados</button></div></div>`).join("")
@@ -1247,7 +1250,7 @@ async function vPainel(c) {
     const ms = (msgs || []).filter((x) => x.cliente === cl.id).length;
     const alerta = (docAtr ? 1 : 0) + impV + obAtr + (hon.length ? 1 : 0);
     return { cl, cp, falta, conferir, docAtr, impV, hon: hon.length, honV, ob: ob.length, obAtr, pr, ms, alerta };
-  }).sort((a, b) => b.alerta - a.alerta || a.cl.nome.localeCompare(b.cl.nome));
+  }).sort((a, b) => abc(a.cl.nome, b.cl.nome));
   const s = (f) => L.reduce((a, x) => a + f(x), 0);
   const FP = { alerta: ["clientes com atraso", (x) => x.alerta], conferir: ["documentos para conferir", (x) => x.conferir], obAtr: ["obrigações atrasadas", (x) => x.obAtr], impV: ["guias vencidas sem pagamento", (x) => x.impV], honV: ["honorários em atraso", (x) => x.hon], pr: ["processos em andamento", (x) => x.pr] };
   const fp = FP[S.fPainel] ? S.fPainel : "", LV = fp ? L.filter((x) => FP[fp][1](x)) : L;
@@ -1308,7 +1311,7 @@ async function vProc(c) {
   const etapas = (p) => (p.wl_processo_etapa || []).sort((a, b) => a.ordem - b.ordem);
   const atual = (p) => etapas(p).find((e) => e.status === "andamento") || etapas(p).find((e) => e.status === "pendente");
   const hj = hojeISO(), fm = S.fProcMod || "";
-  const lista = (ps || []).filter((p) => !fm || String(p.modelo) === fm);
+  const lista = (ps || []).filter((p) => !fm || String(p.modelo) === fm).sort((a, b) => abc(nomeCli(a.cliente), nomeCli(b.cliente)));
   let corpo = "";
   if (S.procVis === "modelos") {
     corpo = `<div class="row sb" style="margin-bottom:10px"><p class="note" style="margin:0">Cada modelo é uma sequência de etapas. Quando a tarefa de uma etapa vai para "Concluído" no quadro, a próxima abre sozinha.</p><button class="btn" id="mdNovo" type="button">+ Modelo</button></div>
